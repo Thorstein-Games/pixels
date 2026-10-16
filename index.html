@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d0f16" />
+    <title>Pixels · Thorstein Games</title>
+    <meta name="description" content="Trap 100 bouncing pixels into a tiny corner of the board. A new puzzle every day." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="top">
+        <h1 class="title">Pixels</h1>
+        <nav class="modes" aria-label="Mode">
+          <button type="button" data-mode="daily" class="mode">Daily</button>
+          <button type="button" data-mode="practice" class="mode">Practice</button>
+        </nav>
+        <button type="button" class="icon-btn" id="help-btn" aria-label="How to play">?</button>
+      </header>
+
+      <section class="hud" aria-live="polite">
+        <div class="stat"><span class="label">Time</span><span class="value" id="time">0:00</span></div>
+        <div class="stat"><span class="label">Moves</span><span class="value" id="moves">0</span></div>
+        <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span></div>
+      </section>
+
+      <section class="meter" aria-label="Area the pixels can reach">
+        <div class="meter-bar"><div class="meter-fill" id="meter-fill"></div><div class="meter-goal" id="meter-goal"></div></div>
+        <div class="meter-text"><span id="area-text">100%</span> <span class="dim" id="goal-text">· goal 10%</span><span class="stuck-note" id="stuck-note" hidden>pixel stuck!</span></div>
+      </section>
+
+      <div class="board-wrap" id="board-wrap">
+        <canvas id="board" aria-label="Game board"></canvas>
+        <div class="overlay" id="start-overlay">
+          <div class="card">
+            <p class="kicker" id="start-kicker">Daily #1</p>
+            <h2>Trap the pixels</h2>
+            <p>Tap squares to wall them in. Win when every pixel is sealed inside <strong id="start-goal">10%</strong> of the board.</p>
+            <button type="button" class="primary" id="start-btn">Start</button>
+          </div>
+        </div>
+        <div class="overlay" id="win-overlay" hidden>
+          <div class="card win">
+            <p class="kicker" id="win-kicker">Daily #1</p>
+            <h2>Trapped!</h2>
+            <div class="results">
+              <div><span class="label">Time</span><span class="value" id="win-time">0:00</span></div>
+              <div><span class="label">Moves</span><span class="value" id="win-moves">0</span></div>
+              <div class="big"><span class="label">Score</span><span class="value" id="win-score">0</span></div>
+            </div>
+            <p class="dim small" id="win-extra"></p>
+            <div class="row">
+              <button type="button" class="primary" id="share-btn">Share</button>
+              <button type="button" id="win-next">Practice</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="controls">
+        <button type="button" id="restart-btn">Restart</button>
+        <button type="button" id="new-btn" hidden>New board</button>
+      </footer>
+    </main>
+
+    <dialog id="help">
+      <h2>How to play</h2>
+      <ul>
+        <li>Tap an empty square to place a block. Tap it again to remove it.</li>
+        <li>Pixels bounce off walls and blocks. Trap them all in <strong id="help-goal">10%</strong> of the board to win.</li>
+        <li>Place a block on a pixel and it gets <span class="red">stuck</span>. You can't win until you free it.</li>
+        <li>Score = moves × seconds. Lower is better.</li>
+        <li>Restarting the daily resets the board, not your clock or moves.</li>
+      </ul>
+      <form method="dialog"><button class="primary">Got it</button></form>
+    </dialog>
+    <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
