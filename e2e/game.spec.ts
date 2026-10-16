@@ -82,3 +82,11 @@ test("daily: winning shows the result, saves it and offers a share", async ({ pa
   await expect(page.locator("#win-extra")).toContainText("Streak 1");
   await expect(page.locator("#restart-btn")).toBeHidden();
 });
+
+test("serves the share image, icons, manifest and sitemap", async ({ page, request }) => {
+  await page.goto("./");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og-image\.png$/);
+  for (const path of ["og-image.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "manifest.webmanifest", "sitemap.xml"]) {
+    expect((await request.get(path)).status(), path).toBe(200);
+  }
+});
