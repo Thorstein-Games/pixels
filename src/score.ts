@@ -7,6 +7,17 @@ export function score(moves: number, timeMs: number): number {
   return Math.round(moves * (timeMs / 1000));
 }
 
+/**
+ * How bad a score looks, so the live number visibly heats up as it climbs.
+ * Cut-offs come from scripts/balance.ts: a quick bot solve scores ~9,000.
+ */
+export function scoreHeat(score: number): "cool" | "mild" | "warm" | "hot" {
+  if (score < 10_000) return "cool";
+  if (score < 25_000) return "mild";
+  if (score < 50_000) return "warm";
+  return "hot";
+}
+
 export function formatTime(ms: number): string {
   const total = Math.floor(ms / 1000);
   const m = Math.floor(total / 60);

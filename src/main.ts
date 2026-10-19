@@ -18,7 +18,7 @@ import {
   saveStats,
   type DailyResult,
 } from "./daily";
-import { formatNumber, formatTime, score } from "./score";
+import { formatNumber, formatTime, score, scoreHeat } from "./score";
 import { shareText } from "./share";
 
 type Mode = "daily" | "practice";
@@ -46,6 +46,7 @@ const ui = {
   winExtra: $("win-extra"),
   shareBtn: $<HTMLButtonElement>("share-btn"),
   winNext: $<HTMLButtonElement>("win-next"),
+  playAgain: $<HTMLButtonElement>("play-again"),
   restartBtn: $<HTMLButtonElement>("restart-btn"),
   newBtn: $<HTMLButtonElement>("new-btn"),
   help: $<HTMLDialogElement>("help"),
@@ -73,6 +74,8 @@ const state = {
   /** Moves from earlier attempts at today's board (restarts, reloads). */
   moveOffset: 0,
   wonAt: null as number | null,
+  /** Seed of the board being played, for "Play again". */
+  seed: 0,
   result: null as DailyResult | null,
   cell: 20,
   /** Cell the pointer is over (hover, or a press being aimed). */
@@ -106,7 +109,8 @@ function setMode(mode: Mode) {
 
 function setupDaily() {
   state.key = dateKey();
-  newGame(generateLevel(dailySeed(state.key)));
+  state.seed = dailySeed(state.key);
+  newGame(generateLevel(state.seed));
   state.running = false;
   state.result = loadResult(state.key);
   const label = `Daily #${puzzleNumber(state.key)}`;
@@ -132,15 +136,17 @@ function setupDaily() {
   updateHud();
 }
 
-function setupPractice(seed = (Math.random() * 2 ** 32) >>> 0) {
+/** A board that's never recorded: a random one, or a replay of `seed`. */
+function setupPractice(seed = (Math.random() * 2 ** 32) >>> 0, label = "Practice") {
+  state.seed = seed;
   newGame(generateLevel(seed));
   state.running = false;
   state.ambient = false;
   state.result = null;
   state.elapsedMs = 0;
   state.moveOffset = 0;
-  ui.startKicker.textContent = "Practice";
-  ui.winKicker.textContent = "Practice";
+  ui.startKicker.textContent = label;
+  ui.winKicker.textContent = label;
   ui.startBtn.textContent = "Start";
   ui.startOverlay.hidden = false;
   ui.winOverlay.hidden = true;
@@ -312,7 +318,9 @@ function updateHud() {
   lastHud = hud;
   ui.time.textContent = formatTime(state.elapsedMs);
   ui.moves.textContent = String(moves);
-  ui.score.textContent = formatNumber(score(moves, state.elapsedMs));
+  const current = score(moves, state.elapsedMs);
+  ui.score.textContent = formatNumber(current);
+  ui.score.dataset.heat = scoreHeat(current);
   ui.meterFill.style.width = `${Math.min(100, (g.area / g.openCells) * 100)}%`;
   ui.meterFill.classList.toggle("ok", g.area <= winArea(g));
   ui.areaText.textContent = `Pixels can reach ${reachPercent(g)}%`;
@@ -420,6 +428,19 @@ ui.confirmRestart.addEventListener("close", () => {
 });
 ui.newBtn.addEventListener("click", () => setupPractice());
 ui.shareBtn.addEventListener("click", share);
+ui.playAgain.addEventListener("click", () => {
+  if (state.mode === "daily") {
+    // Today's board again, just for fun: the saved result and streak stay.
+    state.mode = "practice";
+    ui.newBtn.hidden = false;
+    for (const b of document.querySelectorAll<HTMLButtonElement>(".mode")) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === "practice"));
+    }
+    setupPractice(state.seed, `Daily #${puzzleNumber(state.key)} · replay`);
+  } else {
+    setupPractice(state.seed, ui.winKicker.textContent ?? "Practice");
+  }
+});
 ui.winNext.addEventListener("click", () => {
   if (state.mode === "daily") location.hash = "practice";
   else setupPractice();
@@ -427,7 +448,11 @@ ui.winNext.addEventListener("click", () => {
 $("help-btn").addEventListener("click", () => ui.help.showModal());
 for (const b of document.querySelectorAll<HTMLButtonElement>(".mode")) {
   b.addEventListener("click", () => {
-    location.hash = b.dataset.mode === "practice" ? "practice" : "";
+    const hash = b.dataset.mode === "practice" ? "#practice" : "";
+    // A daily replay runs as practice under the daily URL, so the hash may
+    // already match: switch directly then, as no hashchange will fire.
+    if (location.hash === hash) setMode(b.dataset.mode === "practice" ? "practice" : "daily");
+    else location.hash = hash;
   });
 }
 window.addEventListener("hashchange", () => setMode(location.hash === "#practice" ? "practice" : "daily"));

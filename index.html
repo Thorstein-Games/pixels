@@ -64,7 +64,7 @@
       <section class="hud" aria-live="polite">
         <div class="stat"><span class="label">Time</span><span class="value" id="time">0:00</span></div>
         <div class="stat"><span class="label">Moves</span><span class="value" id="moves">0</span></div>
-        <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span></div>
+        <div class="stat score-stat" title="Moves × seconds. Like golf, lower wins."><span class="label">Score</span><span class="value" id="score">0</span><span class="hint">lower wins</span></div>
       </section>
 
       <section class="meter" aria-label="Area the pixels can reach">
@@ -81,21 +81,23 @@
             <p class="kicker" id="start-kicker">Daily #1</p>
             <h2>Trap the pixels</h2>
             <p>Tap squares to wall them in. Win when every pixel is sealed inside <strong id="start-goal">15%</strong> of the board.</p>
+            <p class="dim small">Score = moves × seconds. Like golf, lower wins.</p>
             <button type="button" class="primary" id="start-btn">Start</button>
           </div>
         </div>
         <div class="overlay" id="win-overlay" hidden>
           <div class="card win">
             <p class="kicker" id="win-kicker">Daily #1</p>
-            <h2>Trapped!</h2>
+            <h2>Caught 'em!</h2>
             <div class="results">
               <div><span class="label">Time</span><span class="value" id="win-time">0:00</span></div>
               <div><span class="label">Moves</span><span class="value" id="win-moves">0</span></div>
-              <div class="big"><span class="label">Score</span><span class="value" id="win-score">0</span></div>
+              <div class="big"><span class="label">Score · lower wins</span><span class="value" id="win-score">0</span></div>
             </div>
             <p class="dim small" id="win-extra"></p>
             <div class="row">
               <button type="button" class="primary" id="share-btn">Share</button>
+              <button type="button" id="play-again">Play again</button>
               <button type="button" id="win-next">Practice</button>
             </div>
           </div>
@@ -115,7 +117,7 @@
         <li>Small squares? Press and hold to see where the block will go, slide to adjust, and let go to place it. Slide off the board to cancel.</li>
         <li>Pixels bounce off walls and blocks. Trap them all in <strong id="help-goal">15%</strong> of the board to win.</li>
         <li>Place a block on a pixel and it gets <span class="red">stuck</span>. You can't win until you free it.</li>
-        <li>Score = moves × seconds. Lower is better.</li>
+        <li>Score = moves × seconds, so it climbs while you play. Like golf, lower wins: be quick and use few moves.</li>
         <li>Restarting the daily resets the board, not your clock or moves.</li>
       </ul>
       <form method="dialog"><button class="primary">Got it</button></form>

@@ -128,6 +128,25 @@ button.primary {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* The live score heats up as it climbs: bigger is worse. */
+#score {
+  transition: color 0.6s;
+}
+#score[data-heat="cool"] {
+  color: var(--green);
+}
+#score[data-heat="warm"] {
+  color: var(--accent);
+}
+#score[data-heat="hot"] {
+  color: var(--red);
+}
+.hint {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+
 .bump {
   animation: bump 0.22s ease-out;
 }
@@ -264,6 +283,7 @@ canvas {
 }
 .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
 }
@@ -359,6 +379,10 @@ dialog li {
   }
   .stat .value {
     font-size: 16px;
+  }
+  /* Too tight in the one-line stats; the colour and title still say it. */
+  .stat .hint {
+    display: none;
   }
   .meter-text {
     font-size: 12px;

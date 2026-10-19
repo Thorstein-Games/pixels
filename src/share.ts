@@ -8,7 +8,7 @@ export function shareText(number: number, result: DailyResult, streak: number): 
   const lines = [
     `${GAME_NAME} #${number}`,
     `⏱ ${formatTime(result.timeMs)} · 🧱 ${result.moves} moves`,
-    `Score ${formatNumber(result.score)}${streak > 1 ? ` · 🔥 ${streak}` : ""}`,
+    `Score ${formatNumber(result.score)} (lower wins)${streak > 1 ? ` · 🔥 ${streak}` : ""}`,
     SITE_URL,
   ];
   return lines.join("\n");

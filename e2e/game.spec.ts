@@ -75,7 +75,7 @@ test("daily: winning shows the result, saves it and offers a share", async ({ pa
   await tapCell(page, 1, 0);
   await tapCell(page, 0, 1);
   await expect(page.locator("#win-overlay")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Trapped!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Caught 'em!" })).toBeVisible();
   await expect(page.locator("#win-moves")).toHaveText("2");
   await page.reload();
   await expect(page.locator("#win-overlay")).toBeVisible();
@@ -164,4 +164,56 @@ test("the board fills a tall tablet screen", async ({ browser }) => {
   // Height is the limit on a portrait tablet: most of it should be board.
   expect(box.height).toBeGreaterThan(1180 * 0.7);
   await page.close();
+});
+
+/** Seals every pixel into the top-left cell with two taps. */
+async function winNow(page: Page) {
+  await page.evaluate(() => {
+    const { game } = (window as any).__pixels;
+    game.cells.fill(0);
+    for (const p of game.pixels) Object.assign(p, { x: 0.5, y: 0.5, vx: 0, vy: 0 });
+  });
+  await tapCell(page, 1, 0);
+  await tapCell(page, 0, 1);
+  await expect(page.locator("#win-overlay")).toBeVisible();
+}
+
+test("play again after the daily replays today's board without touching the result", async ({ page }) => {
+  await page.goto("./");
+  const daily = await page.evaluate(() => (window as any).__pixels.seed);
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await winNow(page);
+  await page.getByRole("button", { name: "Play again" }).click();
+  await expect(page.locator("#start-kicker")).toHaveText(/Daily #\d+ · replay/);
+  expect(await page.evaluate(() => (window as any).__pixels.seed)).toBe(daily);
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await winNow(page);
+  await expect(page.locator("#share-btn")).toBeHidden();
+  // Back on the daily: still solved once, with the first result.
+  await page.locator('.mode[data-mode="daily"]').click();
+  await expect(page.locator("#win-overlay")).toBeVisible();
+  await expect(page.locator("#win-extra")).toContainText("Streak 1");
+  await expect(page.locator("#share-btn")).toBeVisible();
+});
+
+test("play again in practice replays the same board", async ({ page }) => {
+  await page.goto("./#practice");
+  const seed = await page.evaluate(() => (window as any).__pixels.seed);
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await winNow(page);
+  await page.getByRole("button", { name: "Play again" }).click();
+  expect(await page.evaluate(() => (window as any).__pixels.seed)).toBe(seed);
+  await expect(page.locator("#moves")).toHaveText("0");
+});
+
+test("the live score heats up as it grows", async ({ page }) => {
+  await page.goto("./#practice");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await expect(page.locator("#score")).toHaveAttribute("data-heat", "cool");
+  await page.evaluate(() => {
+    const s = (window as any).__pixels;
+    s.elapsedMs = 600_000;
+    s.moveOffset = 100;
+  });
+  await expect(page.locator("#score")).toHaveAttribute("data-heat", "hot");
 });
