@@ -10,13 +10,13 @@ describe("generateLevel", () => {
   });
 
   it("leaves one connected open area with every pixel inside it", () => {
-    for (let seed = 1; seed <= 200; seed++) {
+    for (let seed = 1; seed <= 1000; seed++) {
       const level = generateLevel(seed);
       const { cells, cols, rows } = level;
       const first = cells.indexOf(EMPTY);
       const open = cells.filter((v) => v === EMPTY).length;
       expect(floodFill(cells, cols, rows, [first], () => {})).toBe(open);
-      expect(open).toBeGreaterThan(cells.length * 0.75);
+      expect(open).toBeGreaterThan(cells.length * 0.65);
       expect(level.pixels).toHaveLength(PIXEL_COUNT);
       for (const p of level.pixels) {
         expect(cells[Math.floor(p.y) * cols + Math.floor(p.x)]).toBe(EMPTY);

@@ -34,7 +34,28 @@ export interface Level {
  * doorways between them, and the pixels starting in a few tight clusters
  * so the opening seconds are a race to seal them in.
  */
-export function generateLevel(seed: number, cols = COLS, rows = ROWS): Level {
+/** Board-shape knobs; defaults come from config.ts. */
+export interface Tuning {
+  cols: number;
+  rows: number;
+  roomMaxCells: number;
+  wallGapRatio: number;
+  spawnPoints: number;
+  pixelCount: number;
+}
+
+export const DEFAULT_TUNING: Tuning = {
+  cols: COLS,
+  rows: ROWS,
+  roomMaxCells: ROOM_MAX_CELLS,
+  wallGapRatio: WALL_GAP_RATIO,
+  spawnPoints: SPAWN_POINTS,
+  pixelCount: PIXEL_COUNT,
+};
+
+export function generateLevel(seed: number, overrides: Partial<Tuning> = {}): Level {
+  const tuning = { ...DEFAULT_TUNING, ...overrides };
+  const { cols, rows } = tuning;
   const rng = createRng(seed);
   const cells = new Uint8Array(cols * rows);
   const at = (c: number, r: number) => cells[r * cols + c];
@@ -45,7 +66,7 @@ export function generateLevel(seed: number, cols = COLS, rows = ROWS): Level {
     c >= 0 && r >= 0 && c < cols && r < rows && at(c, r) === EMPTY;
 
   const divide = (x: number, y: number, w: number, h: number) => {
-    if (w * h <= ROOM_MAX_CELLS || (w < 5 && h < 5)) return;
+    if (w * h <= tuning.roomMaxCells || (w < 5 && h < 5)) return;
     const horizontal = h > w || (h === w && rng() < 0.5);
     for (let attempt = 0; attempt < 8; attempt++) {
       if (horizontal) {
@@ -74,13 +95,13 @@ export function generateLevel(seed: number, cols = COLS, rows = ROWS): Level {
   // Knock a few extra holes so the board reads as rooms, not a maze.
   const walls: number[] = [];
   cells.forEach((v, i) => v === WALL && walls.push(i));
-  const holes = Math.round(walls.length * WALL_GAP_RATIO);
+  const holes = Math.round(walls.length * tuning.wallGapRatio);
   for (let i = 0; i < holes && walls.length; i++) {
     cells[walls.splice(Math.floor(rng() * walls.length), 1)[0]] = EMPTY;
   }
 
   sealUnreachable(cells, cols, rows);
-  const pixels = spawnPixels(rng, cells, cols, rows);
+  const pixels = spawnPixels(rng, cells, tuning);
   return { cols, rows, cells, pixels };
 }
 
@@ -110,33 +131,46 @@ function sealUnreachable(cells: Uint8Array, cols: number, rows: number) {
   }
 }
 
-function spawnPixels(rng: Rng, cells: Uint8Array, cols: number, rows: number): PixelStart[] {
+function spawnPixels(rng: Rng, cells: Uint8Array, tuning: Tuning): PixelStart[] {
+  const { cols, rows } = tuning;
   const openAt = (c: number, r: number) =>
     c >= 0 && r >= 0 && c < cols && r < rows && cells[r * cols + c] === EMPTY;
-  // Spawn centres need a fully open 3×3 block around them, spread apart.
-  const candidates: [number, number][] = [];
-  for (let r = 1; r < rows - 1; r++) {
-    for (let c = 1; c < cols - 1; c++) {
-      let clear = true;
-      for (let dr = -1; dr <= 1 && clear; dr++)
-        for (let dc = -1; dc <= 1 && clear; dc++) clear = openAt(c + dc, r + dr);
-      if (clear) candidates.push([c, r]);
+  // Spawn centres sit in the most open spots (ideally a fully open 3×3
+  // block; small rooms may not have one), spread apart.
+  const openness = (c: number, r: number) => {
+    let n = 0;
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (openAt(c + dc, r + dr)) n++;
+    return n;
+  };
+  let best = 0;
+  let candidates: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!openAt(c, r)) continue;
+      const n = openness(c, r);
+      if (n > best) {
+        best = n;
+        candidates = [];
+      }
+      if (n === best) candidates.push([c, r]);
     }
   }
   const centres: [number, number][] = [];
-  for (let attempt = 0; centres.length < SPAWN_POINTS && attempt < 200; attempt++) {
+  for (let attempt = 0; centres.length < tuning.spawnPoints && attempt < 200; attempt++) {
     const pick = candidates[Math.floor(rng() * candidates.length)];
-    if (!pick) break;
     const farEnough = centres.every(([c, r]) => Math.abs(c - pick[0]) + Math.abs(r - pick[1]) >= 8);
     if (farEnough || attempt > 150) centres.push(pick);
   }
 
   const pixels: PixelStart[] = [];
-  for (let i = 0; i < PIXEL_COUNT; i++) {
+  for (let i = 0; i < tuning.pixelCount; i++) {
     const [c, r] = centres[i % centres.length];
-    // Within the 3×3 block, away from its outer edge.
-    const x = c - 1 + 0.2 + rng() * 2.6;
-    const y = r - 1 + 0.2 + rng() * 2.6;
+    // A random open cell of the centre's 3×3 block, away from its edges.
+    const around: [number, number][] = [];
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (openAt(c + dc, r + dr)) around.push([c + dc, r + dr]);
+    const [sc, sr] = around[Math.floor(rng() * around.length)];
+    const x = sc + 0.2 + rng() * 0.6;
+    const y = sr + 0.2 + rng() * 0.6;
     // Keep both components well away from zero so nothing bounces along
     // one row forever. sqrt (unlike sin/cos) is exact on every engine.
     const u = 0.3 + rng() * 0.65;

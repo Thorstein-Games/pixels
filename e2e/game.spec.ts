@@ -85,8 +85,40 @@ test("daily: winning shows the result, saves it and offers a share", async ({ pa
 
 test("serves the share image, icons, manifest and sitemap", async ({ page, request }) => {
   await page.goto("./");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og-image\.png$/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og-image\.png\?v=2$/);
   for (const path of ["og-image.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "manifest.webmanifest", "sitemap.xml"]) {
     expect((await request.get(path)).status(), path).toBe(200);
   }
+});
+
+test("restart asks first, and cancelling keeps the board", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  const [c, r] = await freeCell(page);
+  await tapCell(page, c, r);
+  await page.getByRole("button", { name: "Restart" }).click();
+  const dialog = page.locator("#confirm-restart");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  expect(await page.evaluate(() => (window as any).__pixels.game.moves)).toBe(1);
+  await page.getByRole("button", { name: "Restart" }).click();
+  await dialog.getByRole("button", { name: "Restart" }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__pixels.game.moves)).toBe(0);
+  // Daily restarts keep the move count.
+  await expect(page.locator("#moves")).toHaveText("1");
+});
+
+test("the stuck message doesn't move the board", async ({ page }) => {
+  await page.goto("./#practice");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  const before = await page.locator("#board").boundingBox();
+  const [c, r] = await page.evaluate(() => {
+    const p = (window as any).__pixels.game.pixels[0];
+    Object.assign(p, { vx: 0, vy: 0 });
+    return [Math.floor(p.x), Math.floor(p.y)];
+  });
+  await tapCell(page, c, r);
+  await expect(page.locator("#stuck-note")).toBeVisible();
+  expect(await page.locator("#board").boundingBox()).toEqual(before);
 });

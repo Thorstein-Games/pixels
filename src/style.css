@@ -162,10 +162,32 @@ button.primary {
 .small {
   font-size: 13px;
 }
+.meter-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Floats over the board so showing it never shifts the layout. */
+.board {
+  position: relative;
+}
 .stuck-note {
-  float: right;
-  color: var(--red);
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 92, 112, 0.92);
+  color: #1b0508;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
   animation: blink 0.8s steps(2) infinite;
+}
+.stuck-note[hidden] {
+  display: none;
 }
 @keyframes blink {
   50% {

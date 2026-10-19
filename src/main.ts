@@ -49,6 +49,8 @@ const ui = {
   restartBtn: $<HTMLButtonElement>("restart-btn"),
   newBtn: $<HTMLButtonElement>("new-btn"),
   help: $<HTMLDialogElement>("help"),
+  confirmRestart: $<HTMLDialogElement>("confirm-restart"),
+  confirmText: $("confirm-text"),
   toast: $("toast"),
 };
 
@@ -319,7 +321,9 @@ let lastSave = 0;
 function frame(now: number) {
   const dt = Math.min(now - last, 250);
   last = now;
-  if ((state.running || state.ambient) && !document.hidden) {
+  // Pause behind the help and restart dialogs as well as in hidden tabs.
+  const paused = document.hidden || document.querySelector("dialog[open]") !== null;
+  if ((state.running || state.ambient) && !paused) {
     advance(state.game, dt / 1000);
     if (state.running) {
       state.elapsedMs += dt;
@@ -336,7 +340,18 @@ function frame(now: number) {
 
 canvas.addEventListener("pointerdown", onTap);
 ui.startBtn.addEventListener("click", start);
-ui.restartBtn.addEventListener("click", restart);
+ui.restartBtn.addEventListener("click", () => {
+  if (!state.running && totalMoves() === 0) return restart();
+  ui.confirmText.textContent =
+    state.mode === "daily"
+      ? "The board resets. Your time and moves keep counting."
+      : "The board resets, along with your time and moves.";
+  ui.confirmRestart.returnValue = "";
+  ui.confirmRestart.showModal();
+});
+ui.confirmRestart.addEventListener("close", () => {
+  if (ui.confirmRestart.returnValue === "restart") restart();
+});
 ui.newBtn.addEventListener("click", () => setupPractice());
 ui.shareBtn.addEventListener("click", share);
 ui.winNext.addEventListener("click", () => {
