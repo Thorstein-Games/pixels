@@ -33,6 +33,8 @@ export function draw(
   now: number,
   anim: CellAnim,
   wonAt: number | null,
+  aim: number | null = null,
+  pressing = false,
 ) {
   const { cols, rows, cells, reachable } = game;
   const w = cols * cell;
@@ -85,6 +87,8 @@ export function draw(
     drawSquare(ctx, (i % cols) * cell, Math.floor(i / cols) * cell, cell, 1 - 0.5 * t, 1 - t);
   }
 
+  if (aim !== null) drawAim(ctx, game, cell, aim, pressing);
+
   const size = Math.max(2, Math.round(cell / 9));
   const half = size / 2;
   const glow = wonAt === null ? 0 : 0.5 + 0.5 * Math.sin((now - wonAt) / 140);
@@ -106,6 +110,30 @@ export function draw(
     }
     ctx.fillRect(Math.round(x - half), Math.round(y - half), size, size);
   }
+}
+
+/**
+ * Marks the cell a block would go in. While a finger is down it also lights
+ * up that row and column across the board, which stays visible around the
+ * fingertip that covers the cell itself.
+ */
+function drawAim(ctx: CanvasRenderingContext2D, game: Game, cell: number, aim: number, pressing: boolean) {
+  const c = aim % game.cols;
+  const r = Math.floor(aim / game.cols);
+  const x = c * cell;
+  const y = r * cell;
+  const v = game.cells[aim];
+  const color = v === WALL ? "255, 92, 112" : v === PLACED ? "255, 215, 122" : "143, 243, 255";
+  if (pressing) {
+    ctx.fillStyle = `rgba(${color}, 0.10)`;
+    ctx.fillRect(0, y, game.cols * cell, cell);
+    ctx.fillRect(x, 0, cell, game.rows * cell);
+  }
+  ctx.fillStyle = `rgba(${color}, ${pressing ? 0.3 : 0.15})`;
+  ctx.fillRect(x, y, cell, cell);
+  ctx.strokeStyle = `rgba(${color}, 0.9)`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, cell - 2, cell - 2);
 }
 
 function drawSquare(

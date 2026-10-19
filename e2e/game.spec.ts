@@ -122,3 +122,46 @@ test("the stuck message doesn't move the board", async ({ page }) => {
   await expect(page.locator("#stuck-note")).toBeVisible();
   expect(await page.locator("#board").boundingBox()).toEqual(before);
 });
+
+test("press, drag to aim, and release places the block; releasing off the board cancels", async ({ page }) => {
+  await page.goto("./#practice");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  // Freeze the pixels so the cells stay free.
+  await page.evaluate(() => {
+    for (const p of (window as any).__pixels.game.pixels) Object.assign(p, { vx: 0, vy: 0 });
+  });
+  const [c, r] = await freeCell(page);
+  const cell = await page.evaluate(() => (window as any).__pixels.cell);
+  const box = (await page.locator("#board").boundingBox())!;
+  const at = (cc: number, rr: number) => [box.x + box.width / 2 - (7 - cc - 0.5) * cell, box.y + box.height / 2 - (10 - rr - 0.5) * cell] as const;
+  const index = (cc: number, rr: number) => rr * 14 + cc;
+  const cellValue = (i: number) => page.evaluate((i) => (window as any).__pixels.game.cells[i], i);
+
+  // Start a cell away, drag onto the target, release.
+  const start = c > 0 ? c - 1 : c + 1;
+  await page.mouse.move(...at(start, r));
+  await page.mouse.down();
+  await page.mouse.move(...at(c, r), { steps: 4 });
+  expect(await page.evaluate(() => (window as any).__pixels.aim)).toBe(index(c, r));
+  expect(await cellValue(index(c, r))).toBe(0);
+  await page.mouse.up();
+  expect(await cellValue(index(c, r))).toBe(2);
+  expect(await cellValue(index(start, r))).not.toBe(2);
+
+  // Drag off the board before releasing: nothing happens.
+  await page.mouse.move(...at(c, r));
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width + 40, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.up();
+  expect(await cellValue(index(c, r))).toBe(2);
+  await expect(page.locator("#moves")).toHaveText("1");
+});
+
+test("the board fills a tall tablet screen", async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 820, height: 1180 } });
+  await page.goto("./");
+  const box = (await page.locator("#board").boundingBox())!;
+  // Height is the limit on a portrait tablet: most of it should be board.
+  expect(box.height).toBeGreaterThan(1180 * 0.7);
+  await page.close();
+});

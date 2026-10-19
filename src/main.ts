@@ -75,6 +75,9 @@ const state = {
   wonAt: null as number | null,
   result: null as DailyResult | null,
   cell: 20,
+  /** Cell the pointer is over (hover, or a press being aimed). */
+  aim: null as number | null,
+  pressing: false,
 };
 
 // Lets the e2e tests drive the game without pixel-perfect taps.
@@ -171,11 +174,50 @@ function persist() {
   saveProgress({ key: state.key, elapsedMs: state.elapsedMs, moves: totalMoves() });
 }
 
-function onTap(e: PointerEvent) {
-  if (!state.running) return;
+/** The board cell under a pointer, or null when it's off the board. */
+function cellAt(e: PointerEvent): number | null {
   const rect = canvas.getBoundingClientRect();
   const c = Math.floor((e.clientX - rect.left - canvas.clientLeft) / state.cell);
   const r = Math.floor((e.clientY - rect.top - canvas.clientTop) / state.cell);
+  const { cols, rows } = state.game;
+  return c >= 0 && r >= 0 && c < cols && r < rows ? r * cols + c : null;
+}
+
+/**
+ * Blocks go down when the finger lifts, not when it lands: pressing shows
+ * where the block will go, dragging moves it, and lifting off the board
+ * cancels. A quick tap works as before.
+ */
+let pressId: number | null = null;
+function onPointerDown(e: PointerEvent) {
+  if (!state.running || pressId !== null) return;
+  e.preventDefault();
+  pressId = e.pointerId;
+  canvas.setPointerCapture(e.pointerId);
+  state.aim = cellAt(e);
+  state.pressing = true;
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (pressId === e.pointerId || e.pointerType === "mouse") state.aim = cellAt(e);
+}
+
+function onPointerUp(e: PointerEvent) {
+  if (pressId !== e.pointerId) return;
+  pressId = null;
+  state.pressing = false;
+  const i = cellAt(e);
+  state.aim = e.pointerType === "mouse" ? i : null;
+  if (i !== null && state.running) place(i % state.game.cols, Math.floor(i / state.game.cols));
+}
+
+function onPointerCancel(e: PointerEvent) {
+  if (pressId === e.pointerId) pressId = null;
+  state.pressing = false;
+  state.aim = null;
+}
+
+function place(c: number, r: number) {
   const stuckBefore = state.game.stuck;
   const result = tap(state.game, c, r);
   if (result === "none" || result === "blocked") return;
@@ -301,11 +343,12 @@ async function share() {
 
 function resize() {
   const wrap = $("board-wrap");
-  const border = 4;
+  // Both sides of the canvas border, which is thinner on small phones.
+  const border = canvas.offsetWidth - canvas.clientWidth;
   const { cols, rows } = state.game;
   const cell = Math.max(
     8,
-    Math.min(40, Math.floor(Math.min((wrap.clientWidth - border) / cols, (wrap.clientHeight - border) / rows))),
+    Math.min(72, Math.floor(Math.min((wrap.clientWidth - border) / cols, (wrap.clientHeight - border) / rows))),
   );
   state.cell = cell;
   const dpr = window.devicePixelRatio || 1;
@@ -334,11 +377,20 @@ function frame(now: number) {
     }
     updateHud();
   }
-  draw(ctx, state.game, state.cell, now, state.anim, state.wonAt);
+  draw(ctx, state.game, state.cell, now, state.anim, state.wonAt, state.running ? state.aim : null, state.pressing);
   requestAnimationFrame(frame);
 }
 
-canvas.addEventListener("pointerdown", onTap);
+canvas.addEventListener("pointerdown", onPointerDown);
+canvas.addEventListener("pointermove", onPointerMove);
+canvas.addEventListener("pointerup", onPointerUp);
+canvas.addEventListener("pointercancel", onPointerCancel);
+canvas.addEventListener("pointerleave", (e) => {
+  if (e.pointerType === "mouse" && pressId === null) state.aim = null;
+});
+// iOS Safari still zooms on quick double taps unless the touches are eaten.
+canvas.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("dblclick", (e) => e.preventDefault());
 ui.startBtn.addEventListener("click", start);
 ui.restartBtn.addEventListener("click", () => {
   if (!state.running && totalMoves() === 0) return restart();
@@ -365,7 +417,9 @@ for (const b of document.querySelectorAll<HTMLButtonElement>(".mode")) {
   });
 }
 window.addEventListener("hashchange", () => setMode(location.hash === "#practice" ? "practice" : "daily"));
-window.addEventListener("resize", resize);
+// Refit whenever the space for the board changes (rotation, browser bars,
+// late layout), not just on window resize.
+new ResizeObserver(resize).observe($("board-wrap"));
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) persist();
 });

@@ -19,7 +19,7 @@ npx vite-node scripts/balance.ts [seeds] ['{"roomMaxCells":14}']  # bot playtest
 - `src/game/level.ts` — `generateLevel(seed)`: recursive-division rooms with doorways, unreachable pockets sealed, pixels spawned in clusters. `floodFill` is shared with the sim.
 - `src/game/sim.ts` — pure game state: fixed-timestep physics (`advance`/`step`, axis-separated bounces so pixels stay in 4-connected regions), `tap`, `measure` (reachable area; only changes on a tap, so the win check runs there).
 - `src/daily.ts` — date keys, seed, streak math, localStorage (`pixels.daily.*`). Daily progress (clock + moves) survives reloads and restarts; the board itself resets.
-- `src/main.ts` — DOM/UI wiring and the rAF loop; `src/render.ts` — canvas drawing and animations.
+- `src/main.ts` — DOM/UI wiring and the rAF loop; `src/render.ts` — canvas drawing and animations. Blocks are placed on pointer *up* (press shows an aim highlight, drag moves it, releasing off the board cancels); the canvas eats `touchstart` and the page uses `touch-action: manipulation` so iOS doesn't double-tap zoom. The board is sized by a `ResizeObserver` on `#board-wrap`, and `.app`'s max-width grows with screen height so tablets fill up.
 - `window.__pixels` exposes UI state so e2e tests can steer pixels instead of chasing them.
 
 Determinism: the daily board and pixel paths must match on every device, so level generation avoids `Math.sin`/`cos` (only `sqrt`) and the sim always steps by `STEP_SECONDS`.

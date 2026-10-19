@@ -15,6 +15,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* No double-tap zoom anywhere on the page; pinch zoom still works. */
+  touch-action: manipulation;
+}
+
 html,
 body {
   margin: 0;
@@ -23,6 +28,9 @@ body {
   color: var(--text);
   font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 button {
@@ -45,7 +53,9 @@ button.primary {
 }
 
 .app {
-  max-width: 520px;
+  /* Wide enough for the board to fill a tall screen (it is 14:20, under
+     about 230px of header, stats and buttons), and never narrower than 520. */
+  max-width: clamp(520px, calc((100dvh - 230px) * 0.7 + 32px), 900px);
   margin: 0 auto;
   height: 100dvh;
   display: flex;
@@ -324,4 +334,51 @@ dialog li {
 .toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+@media (max-width: 420px) {
+  /* Every pixel of width goes to the board on small phones. */
+  .app {
+    padding-left: 6px;
+    padding-right: 6px;
+    gap: 8px;
+  }
+  canvas {
+    border-width: 1px;
+  }
+}
+
+@media (max-height: 740px) {
+  /* Short phones: the board is limited by height, so trim everything else. */
+  .app {
+    gap: 6px;
+    padding-top: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .title {
+    font-size: 18px;
+  }
+  .mode {
+    padding: 3px 8px;
+  }
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+  .stat {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px;
+  }
+  .stat .value {
+    font-size: 16px;
+  }
+  .meter-text {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .controls button {
+    padding: 5px 12px;
+  }
 }
