@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PIXEL_COUNT } from "../src/game/config";
 import { EMPTY, PLACED, WALL, floodFill, generateLevel } from "../src/game/level";
-import { advance, cellOf, createGame, tap, winArea } from "../src/game/sim";
+import { advance, cellOf, createGame, reachPercent, tap, winArea } from "../src/game/sim";
+import { WIN_AREA_PERCENT } from "../src/game/config";
 
 describe("generateLevel", () => {
   it("is deterministic for a seed", () => {
@@ -106,5 +107,18 @@ describe("tap", () => {
     tap(game, 1, 1);
     expect(game.stuck).toBe(1);
     expect(game.won).toBe(false);
+  });
+});
+
+describe("reachPercent", () => {
+  it("shows the goal percent exactly when the area is small enough to win", () => {
+    const game = createGame(generateLevel(1));
+    for (let open = 100; open <= 400; open++) {
+      game.openCells = open;
+      for (let area = 1; area <= open; area++) {
+        game.area = area;
+        expect(reachPercent(game) <= WIN_AREA_PERCENT, `${area}/${open}`).toBe(area <= winArea(game));
+      }
+    }
   });
 });

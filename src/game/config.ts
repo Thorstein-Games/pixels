@@ -13,8 +13,8 @@ export const PIXEL_SPEED = 1.5;
 /** Collision margin in cells, so a pixel's dot never overlaps a wall. */
 export const PIXEL_RADIUS = 0.07;
 
-/** Win when every pixel can reach at most this share of the open cells. */
-export const WIN_AREA_RATIO = 0.15;
+/** Win when every pixel can reach at most this percent of the open cells. */
+export const WIN_AREA_PERCENT = 15;
 
 /** Rooms this size (in cells) or smaller aren't divided further. */
 export const ROOM_MAX_CELLS = 14;

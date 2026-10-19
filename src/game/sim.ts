@@ -1,4 +1,4 @@
-import { PIXEL_RADIUS, STEP_SECONDS, WIN_AREA_RATIO } from "./config";
+import { PIXEL_RADIUS, STEP_SECONDS, WIN_AREA_PERCENT } from "./config";
 import { EMPTY, PLACED, WALL, floodFill, type Level } from "./level";
 
 export interface Pixel {
@@ -50,8 +50,17 @@ export function createGame(level: Level): Game {
   return game;
 }
 
+/** Most cells the pixels may reach for a win (integer maths, no float drift). */
 export function winArea(game: Game): number {
-  return Math.floor(game.openCells * WIN_AREA_RATIO);
+  return Math.floor((game.openCells * WIN_AREA_PERCENT) / 100);
+}
+
+/**
+ * Reachable share of the board for display, rounded up: it reads the goal
+ * percent exactly when the area is small enough to win, never before.
+ */
+export function reachPercent(game: Game): number {
+  return Math.ceil((game.area * 100) / game.openCells);
 }
 
 /** Advances the simulation by `seconds` of real time in fixed steps. */

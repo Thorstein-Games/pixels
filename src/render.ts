@@ -34,7 +34,8 @@ export function draw(
   anim: CellAnim,
   wonAt: number | null,
   aim: number | null = null,
-  pressing = false,
+  /** Milliseconds the current press has been held, or null when not pressing. */
+  pressAge: number | null = null,
 ) {
   const { cols, rows, cells, reachable } = game;
   const w = cols * cell;
@@ -87,7 +88,7 @@ export function draw(
     drawSquare(ctx, (i % cols) * cell, Math.floor(i / cols) * cell, cell, 1 - 0.5 * t, 1 - t);
   }
 
-  if (aim !== null) drawAim(ctx, game, cell, aim, pressing);
+  if (aim !== null) drawAim(ctx, game, cell, aim, pressAge);
 
   const size = Math.max(2, Math.round(cell / 9));
   const half = size / 2;
@@ -112,24 +113,29 @@ export function draw(
   }
 }
 
+/** A press held this long starts showing row/column guides, fading in. */
+const GUIDE_DELAY_MS = 150;
+const GUIDE_FADE_MS = 200;
+
 /**
- * Marks the cell a block would go in. While a finger is down it also lights
- * up that row and column across the board, which stays visible around the
- * fingertip that covers the cell itself.
+ * Marks the cell a block would go in. A press held past a quick tap also
+ * fades in faint guides along that row and column, which stay visible
+ * around the fingertip covering the cell itself.
  */
-function drawAim(ctx: CanvasRenderingContext2D, game: Game, cell: number, aim: number, pressing: boolean) {
+function drawAim(ctx: CanvasRenderingContext2D, game: Game, cell: number, aim: number, pressAge: number | null) {
   const c = aim % game.cols;
   const r = Math.floor(aim / game.cols);
   const x = c * cell;
   const y = r * cell;
   const v = game.cells[aim];
   const color = v === WALL ? "255, 92, 112" : v === PLACED ? "255, 215, 122" : "143, 243, 255";
-  if (pressing) {
-    ctx.fillStyle = `rgba(${color}, 0.10)`;
+  const fade = pressAge === null ? 0 : Math.min(1, Math.max(0, (pressAge - GUIDE_DELAY_MS) / GUIDE_FADE_MS));
+  if (fade > 0) {
+    ctx.fillStyle = `rgba(${color}, ${0.05 * fade})`;
     ctx.fillRect(0, y, game.cols * cell, cell);
     ctx.fillRect(x, 0, cell, game.rows * cell);
   }
-  ctx.fillStyle = `rgba(${color}, ${pressing ? 0.3 : 0.15})`;
+  ctx.fillStyle = `rgba(${color}, ${0.15 + 0.1 * fade})`;
   ctx.fillRect(x, y, cell, cell);
   ctx.strokeStyle = `rgba(${color}, 0.9)`;
   ctx.lineWidth = 2;

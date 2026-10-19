@@ -69,13 +69,12 @@
 
       <section class="meter" aria-label="Area the pixels can reach">
         <div class="meter-bar"><div class="meter-fill" id="meter-fill"></div><div class="meter-goal" id="meter-goal"></div></div>
-        <div class="meter-text"><span id="area-text">100%</span> <span class="dim" id="goal-text">· goal 15%</span></div>
+        <div class="meter-text"><span id="area-text">100%</span> <span class="dim" id="goal-text">· goal 15%</span><span class="stuck-note" id="stuck-note" role="status" hidden>pixel stuck!</span></div>
       </section>
 
       <div class="board-wrap" id="board-wrap">
         <div class="board">
           <canvas id="board" aria-label="Game board"></canvas>
-          <div class="stuck-note" id="stuck-note" role="status" hidden>pixel stuck!</div>
         </div>
         <div class="overlay" id="start-overlay">
           <div class="card">

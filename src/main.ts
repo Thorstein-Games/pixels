@@ -1,7 +1,7 @@
 import "./style.css";
-import { WIN_AREA_RATIO } from "./game/config";
+import { WIN_AREA_PERCENT } from "./game/config";
 import { generateLevel, type Level } from "./game/level";
-import { advance, createGame, tap, type Game } from "./game/sim";
+import { advance, createGame, reachPercent, tap, winArea, type Game } from "./game/sim";
 import { createAnim, draw, type CellAnim } from "./render";
 import {
   clearProgress,
@@ -54,10 +54,10 @@ const ui = {
   toast: $("toast"),
 };
 
-const goalPct = `${Math.round(WIN_AREA_RATIO * 100)}%`;
+const goalPct = `${WIN_AREA_PERCENT}%`;
 for (const id of ["start-goal", "help-goal"]) $(id).textContent = goalPct;
 ui.goalText.textContent = `· goal ${goalPct}`;
-ui.meterGoal.style.left = `${WIN_AREA_RATIO * 100}%`;
+ui.meterGoal.style.left = `${WIN_AREA_PERCENT}%`;
 
 const state = {
   mode: "daily" as Mode,
@@ -77,7 +77,8 @@ const state = {
   cell: 20,
   /** Cell the pointer is over (hover, or a press being aimed). */
   aim: null as number | null,
-  pressing: false,
+  /** When the current press started, for fading in its aim guides. */
+  pressedAt: null as number | null,
 };
 
 // Lets the e2e tests drive the game without pixel-perfect taps.
@@ -195,7 +196,7 @@ function onPointerDown(e: PointerEvent) {
   pressId = e.pointerId;
   canvas.setPointerCapture(e.pointerId);
   state.aim = cellAt(e);
-  state.pressing = true;
+  state.pressedAt = performance.now();
 }
 
 function onPointerMove(e: PointerEvent) {
@@ -205,7 +206,7 @@ function onPointerMove(e: PointerEvent) {
 function onPointerUp(e: PointerEvent) {
   if (pressId !== e.pointerId) return;
   pressId = null;
-  state.pressing = false;
+  state.pressedAt = null;
   const i = cellAt(e);
   state.aim = e.pointerType === "mouse" ? i : null;
   if (i !== null && state.running) place(i % state.game.cols, Math.floor(i / state.game.cols));
@@ -213,7 +214,7 @@ function onPointerUp(e: PointerEvent) {
 
 function onPointerCancel(e: PointerEvent) {
   if (pressId === e.pointerId) pressId = null;
-  state.pressing = false;
+  state.pressedAt = null;
   state.aim = null;
 }
 
@@ -312,12 +313,16 @@ function updateHud() {
   ui.time.textContent = formatTime(state.elapsedMs);
   ui.moves.textContent = String(moves);
   ui.score.textContent = formatNumber(score(moves, state.elapsedMs));
-  const pct = (g.area / g.openCells) * 100;
-  ui.meterFill.style.width = `${Math.min(100, pct)}%`;
-  ui.meterFill.classList.toggle("ok", pct <= WIN_AREA_RATIO * 100);
-  ui.areaText.textContent = `Pixels can reach ${Math.round(pct)}%`;
-  ui.stuckNote.hidden = g.stuck === 0;
-  ui.stuckNote.textContent = g.stuck === 1 ? "1 pixel stuck!" : `${g.stuck} pixels stuck!`;
+  ui.meterFill.style.width = `${Math.min(100, (g.area / g.openCells) * 100)}%`;
+  ui.meterFill.classList.toggle("ok", g.area <= winArea(g));
+  ui.areaText.textContent = `Pixels can reach ${reachPercent(g)}%`;
+  // The stuck warning takes over the meter's line while it lasts, so it
+  // sits outside the board and never shifts the layout.
+  const stuck = g.stuck > 0;
+  ui.stuckNote.hidden = !stuck;
+  ui.areaText.hidden = stuck;
+  ui.goalText.hidden = stuck;
+  ui.stuckNote.textContent = `${g.stuck === 1 ? "1 pixel" : `${g.stuck} pixels`} stuck! Tap the block to free ${g.stuck === 1 ? "it" : "them"}.`;
 }
 
 function showToast(text: string) {
@@ -377,7 +382,16 @@ function frame(now: number) {
     }
     updateHud();
   }
-  draw(ctx, state.game, state.cell, now, state.anim, state.wonAt, state.running ? state.aim : null, state.pressing);
+  draw(
+    ctx,
+    state.game,
+    state.cell,
+    now,
+    state.anim,
+    state.wonAt,
+    state.running ? state.aim : null,
+    state.pressedAt === null ? null : now - state.pressedAt,
+  );
   requestAnimationFrame(frame);
 }
 

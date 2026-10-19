@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Pixels (working title): ~100 pixels bounce around a grid; the player taps cells to place/remove blocks and wins once every pixel is sealed into at most `WIN_AREA_RATIO` (15%) of the board's open cells. Placing a block on a pixel traps it (it shakes) until the block is removed, and you can't win while any pixel is trapped. Score = moves × seconds, lower is better. A daily board (seeded by local date) plus a practice mode (`#practice`).
+Pixels (working title): ~100 pixels bounce around a grid; the player taps cells to place/remove blocks and wins once every pixel is sealed into at most `WIN_AREA_PERCENT` (15%) of the board's open cells. Placing a block on a pixel traps it (it shakes) until the block is removed, and you can't win while any pixel is trapped. Score = moves × seconds, lower is better. A daily board (seeded by local date) plus a practice mode (`#practice`).
 
 Plain Vite + TypeScript, canvas rendering, no framework, no server. Built with `base: "/pixels/"` and deployed to GitHub Pages by `.github/workflows/deploy.yml`; thorstein-games-website proxies `thorsteingames.com/pixels` to it.
 
