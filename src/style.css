@@ -52,12 +52,22 @@ button.primary {
   font-weight: 700;
 }
 
+/* The shared Thorstein Games bar is 40px; hold its space before tg-bar.js
+   loads. The game fills the screen under it, so the footer starts below the
+   fold. */
+tg-bar:not(:defined) {
+  display: block;
+  height: 40px;
+  background: #0b0b0e;
+}
+
 .app {
   /* Wide enough for the board to fill a tall screen (it is 14:20, under
-     about 230px of header, stats and buttons), and never narrower than 520. */
-  max-width: clamp(520px, calc((100dvh - 230px) * 0.7 + 32px), 900px);
+     about 270px of shared bar, header, stats and buttons), and never
+     narrower than 520. */
+  max-width: clamp(520px, calc((100dvh - 270px) * 0.7 + 32px), 900px);
   margin: 0 auto;
-  height: 100dvh;
+  height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -237,6 +247,7 @@ canvas {
   justify-content: center;
   background: rgba(8, 9, 14, 0.55);
   backdrop-filter: blur(1.5px);
+  overflow-y: auto;
 }
 .overlay[hidden] {
   display: none;
@@ -249,6 +260,13 @@ canvas {
   padding: 20px;
   text-align: center;
   animation: rise 0.3s ease-out;
+  /* Centred, but scrolls from the top if it is taller than the board. */
+  margin: auto;
+}
+.more-games {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 .card h2 {
   margin: 4px 0 10px;

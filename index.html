@@ -49,8 +49,11 @@
         "publisher": { "@type": "Organization", "name": "Thorstein Games", "url": "https://thorsteingames.com" }
       }
     </script>
+    <!-- Shared Thorstein Games bar and footer (see CLAUDE.md). -->
+    <script src="https://thorsteingames.com/tg-bar.js" async></script>
   </head>
   <body>
+    <tg-bar game="pixels"></tg-bar>
     <main class="app">
       <header class="top">
         <h1 class="title">Pixels</h1>
@@ -100,6 +103,7 @@
               <button type="button" id="play-again">Play again</button>
               <button type="button" id="win-next">Practice</button>
             </div>
+            <tg-more-games game="pixels" class="more-games"></tg-more-games>
           </div>
         </div>
       </div>
@@ -109,6 +113,7 @@
         <button type="button" id="new-btn" hidden>New board</button>
       </footer>
     </main>
+    <tg-footer game="pixels"></tg-footer>
 
     <dialog id="help">
       <h2>How to play</h2>

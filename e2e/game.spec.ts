@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
+  // The shared Thorstein Games bar comes from production; keep tests off the
+  // network. Its 40px placeholder keeps the layout the same.
+  await page.route("https://thorsteingames.com/tg-bar.js", (r) =>
+    r.fulfill({ contentType: "text/javascript", body: "" }),
+  );
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -216,4 +221,16 @@ test("the live score heats up as it grows", async ({ page }) => {
     s.moveOffset = 100;
   });
   await expect(page.locator("#score")).toHaveAttribute("data-heat", "hot");
+});
+
+test("the game fills the screen under the shared bar, footer below the fold", async ({ page }) => {
+  await page.goto("./#practice");
+  const vh = page.viewportSize()!.height;
+  const bar = (await page.locator("tg-bar").boundingBox())!;
+  expect(bar.y).toBe(0);
+  expect(bar.height).toBe(40);
+  const controls = (await page.locator(".controls").boundingBox())!;
+  expect(controls.y + controls.height).toBeLessThanOrEqual(vh);
+  const footer = await page.locator("tg-footer").evaluate((el) => el.getBoundingClientRect().top);
+  expect(footer).toBeGreaterThanOrEqual(vh);
 });
