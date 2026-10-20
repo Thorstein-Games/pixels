@@ -263,6 +263,25 @@ canvas {
   /* Centred, but scrolls from the top if it is taller than the board. */
   margin: auto;
 }
+/* Ads (tg-ad, see CLAUDE.md): the win overlay stacks its card and the ad,
+   centred together; the banner sits between the game and the footer. */
+#win-overlay {
+  flex-direction: column;
+  /* The auto margins centre the pair; centring with justify-content would
+     cut off the card's top once the pair is taller than the board. */
+  justify-content: flex-start;
+}
+#win-overlay .card {
+  margin-bottom: 0;
+}
+.win-ad {
+  width: 100%;
+  margin: 12px auto auto;
+  padding-bottom: 12px;
+}
+.page-ad {
+  padding: 24px 0;
+}
 .more-games {
   margin-top: 18px;
   padding-top: 14px;
