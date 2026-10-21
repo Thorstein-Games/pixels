@@ -1,8 +1,8 @@
 import { formatNumber, formatTime } from "./score";
 import type { DailyResult } from "./daily";
 
-export const GAME_NAME = "Pixels";
-export const SITE_URL = "https://thorsteingames.com/pixels";
+export const GAME_NAME = "Pix Pen";
+export const SITE_URL = "https://thorsteingames.com/pix-pen";
 
 export function shareText(number: number, result: DailyResult, streak: number): string {
   const lines = [

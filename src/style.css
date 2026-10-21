@@ -108,6 +108,7 @@ tg-bar:not(:defined) {
   color: var(--text);
 }
 .icon-btn {
+  flex-shrink: 0;
   width: 34px;
   height: 34px;
   padding: 0;
@@ -429,5 +430,15 @@ dialog li {
   }
   .controls button {
     padding: 5px 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Logo, mode tabs and help button share one row on the narrowest phones. */
+  .top {
+    gap: 6px;
+  }
+  .title img {
+    height: 20px;
   }
 }

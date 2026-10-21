@@ -13,7 +13,7 @@
  */
 import { writeFileSync } from "node:fs";
 
-export const NAME = "PIXELS";
+export const NAME = "PIX PEN";
 
 const BG = "#0d0f16";
 const BLOCK = "#f5b83d";

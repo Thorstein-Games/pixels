@@ -1,5 +1,5 @@
 # Publishes to GitHub Pages (thorstein-games.github.io/pixels), which
-# thorstein-games-website proxies at thorsteingames.com/pixels.
+# thorstein-games-website proxies at thorsteingames.com/pix-pen.
 name: Deploy
 
 on:

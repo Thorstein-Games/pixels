@@ -1,9 +1,9 @@
 {
-  "name": "Pixels",
-  "short_name": "Pixels",
+  "name": "Pix Pen",
+  "short_name": "Pix Pen",
   "description": "Trap 100 bouncing pixels into 15% of the board. A new puzzle every day.",
-  "start_url": "/pixels/",
-  "scope": "/pixels/",
+  "start_url": "/pix-pen/",
+  "scope": "/pix-pen/",
   "display": "standalone",
   "background_color": "#0d0f16",
   "theme_color": "#0d0f16",

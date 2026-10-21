@@ -74,7 +74,7 @@ await page.setContent(`<body style="margin:0;width:1200px;height:630px;overflow:
     <img src="${svg("logo.svg")}" style="height:128px;display:block;margin-left:-6px">
     <div style="font-size:40px;margin-top:34px;line-height:1.3">Trap ${PIXEL_COUNT} bouncing pixels<br>in ${WIN_AREA_PERCENT}% of the board.</div>
     <div style="font-size:26px;margin-top:26px;color:#f5b83d">A new puzzle every day</div>
-    <div style="font-size:22px;margin-top:34px;color:#8a90a8">thorsteingames.com/pixels</div>
+    <div style="font-size:22px;margin-top:34px;color:#8a90a8">thorsteingames.com/pix-pen</div>
   </div>
   <canvas id="c" width="${game.cols * cell * 2}" height="${game.rows * cell * 2}"
     style="width:${game.cols * cell}px;height:${game.rows * cell}px;margin-right:64px;border:2px solid #4c5378;border-radius:6px;box-shadow:0 0 60px rgba(0,0,0,.6)"></canvas>
