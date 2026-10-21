@@ -4,8 +4,8 @@ import { generateLevel, type Level } from "./game/level";
 import { advance, createGame, reachPercent, tap, winArea, type Game } from "./game/sim";
 import { createAnim, draw, type CellAnim, type Look } from "./render";
 
-/** Try-out switch for the pixie look: `?look=pixie`. */
-const look: Look = new URLSearchParams(location.search).get("look") === "pixie" ? "pixie" : "classic";
+/** Pixies by default; `?look=classic` draws plain dots instead. */
+const look: Look = new URLSearchParams(location.search).get("look") === "classic" ? "classic" : "pixie";
 import {
   clearProgress,
   currentStreak,
@@ -326,14 +326,14 @@ function updateHud() {
   ui.score.dataset.heat = scoreHeat(current);
   ui.meterFill.style.width = `${Math.min(100, (g.area / g.openCells) * 100)}%`;
   ui.meterFill.classList.toggle("ok", g.area <= winArea(g));
-  ui.areaText.textContent = `Pixels can reach ${reachPercent(g)}%`;
+  ui.areaText.textContent = `Pixies can reach ${reachPercent(g)}%`;
   // The stuck warning takes over the meter's line while it lasts, so it
   // sits outside the board and never shifts the layout.
   const stuck = g.stuck > 0;
   ui.stuckNote.hidden = !stuck;
   ui.areaText.hidden = stuck;
   ui.goalText.hidden = stuck;
-  ui.stuckNote.textContent = `${g.stuck === 1 ? "1 pixel" : `${g.stuck} pixels`} stuck! Tap the block to free ${g.stuck === 1 ? "it" : "them"}.`;
+  ui.stuckNote.textContent = `${g.stuck === 1 ? "1 pixie" : `${g.stuck} pixies`} stuck! Tap the block to free ${g.stuck === 1 ? "it" : "them"}.`;
 }
 
 function showToast(text: string) {

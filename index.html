@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0d0f16" />
     <title>Pix Pen: Daily Puzzle Game · Thorstein Games</title>
-    <meta name="description" content="Trap 100 bouncing pixels into 15% of the board by placing blocks. A free daily puzzle game in your browser, with streaks, scores and unlimited practice boards." />
-    <meta name="keywords" content="pix pen, pixels game, daily puzzle, browser puzzle game, free puzzle game, trap the pixels, thorstein games" />
+    <meta name="description" content="Pen 100 bouncing pixies into 15% of the board by placing blocks. A free daily puzzle game in your browser, with streaks, scores and unlimited practice boards." />
+    <meta name="keywords" content="pix pen, pixie game, pixels game, daily puzzle, browser puzzle game, free puzzle game, thorstein games" />
     <link rel="canonical" href="https://thorsteingames.com/pix-pen" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
 
@@ -14,17 +14,17 @@
     <meta property="og:site_name" content="Thorstein Games" />
     <meta property="og:url" content="https://thorsteingames.com/pix-pen" />
     <meta property="og:title" content="Pix Pen: Daily Puzzle Game" />
-    <meta property="og:description" content="Trap 100 bouncing pixels into 15% of the board. A new puzzle every day." />
-    <meta property="og:image" content="https://thorsteingames.com/pix-pen/og-image.png?v=4" />
+    <meta property="og:description" content="Pen 100 bouncing pixies into 15% of the board. A new puzzle every day." />
+    <meta property="og:image" content="https://thorsteingames.com/pix-pen/og-image.png?v=5" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The Pix Pen logo beside a board of blocks walling in clusters of bouncing pixels" />
+    <meta property="og:image:alt" content="The Pix Pen logo beside a board of blocks penning in glowing, sparkling pixies" />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:creator" content="@thorsteingames" />
     <meta name="twitter:title" content="Pix Pen: Daily Puzzle Game" />
-    <meta name="twitter:description" content="Trap 100 bouncing pixels into 15% of the board. A new puzzle every day." />
-    <meta name="twitter:image" content="https://thorsteingames.com/pix-pen/og-image.png?v=4" />
+    <meta name="twitter:description" content="Pen 100 bouncing pixies into 15% of the board. A new puzzle every day." />
+    <meta name="twitter:image" content="https://thorsteingames.com/pix-pen/og-image.png?v=5" />
 
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -37,8 +37,8 @@
         "@type": "VideoGame",
         "name": "Pix Pen",
         "url": "https://thorsteingames.com/pix-pen",
-        "image": "https://thorsteingames.com/pix-pen/og-image.png?v=4",
-        "description": "Trap 100 bouncing pixels into 15% of the board by placing blocks. A new puzzle every day.",
+        "image": "https://thorsteingames.com/pix-pen/og-image.png?v=5",
+        "description": "Pen 100 bouncing pixies into 15% of the board by placing blocks. A new puzzle every day.",
         "genre": ["Puzzle", "Daily puzzle"],
         "gamePlatform": "Web browser",
         "applicationCategory": "Game",
@@ -71,9 +71,9 @@
         <div class="stat score-stat" title="Moves × seconds. Like golf, lower wins."><span class="label">Score</span><span class="value" id="score">0</span><span class="hint">lower wins</span></div>
       </section>
 
-      <section class="meter" aria-label="Area the pixels can reach">
+      <section class="meter" aria-label="Area the pixies can reach">
         <div class="meter-bar"><div class="meter-fill" id="meter-fill"></div><div class="meter-goal" id="meter-goal"></div></div>
-        <div class="meter-text"><span id="area-text">100%</span> <span class="dim" id="goal-text">· goal 15%</span><span class="stuck-note" id="stuck-note" role="status" hidden>pixel stuck!</span></div>
+        <div class="meter-text"><span id="area-text">100%</span> <span class="dim" id="goal-text">· goal 15%</span><span class="stuck-note" id="stuck-note" role="status" hidden>pixie stuck!</span></div>
       </section>
 
       <div class="board-wrap" id="board-wrap">
@@ -83,8 +83,8 @@
         <div class="overlay" id="start-overlay">
           <div class="card">
             <p class="kicker" id="start-kicker">Daily #1</p>
-            <h2>Trap the pixels</h2>
-            <p>Tap squares to wall them in. Win when every pixel is sealed inside <strong id="start-goal">15%</strong> of the board.</p>
+            <h2>Pen the pixies</h2>
+            <p>Tap squares to wall them in. Win when every pixie is penned inside <strong id="start-goal">15%</strong> of the board.</p>
             <p class="dim small">Score = moves × seconds. Like golf, lower wins.</p>
             <button type="button" class="primary" id="start-btn">Start</button>
           </div>
@@ -123,8 +123,8 @@
       <ul>
         <li>Tap an empty square to place a block. Tap it again to remove it.</li>
         <li>Small squares? Press and hold to see where the block will go, slide to adjust, and let go to place it. Slide off the board to cancel.</li>
-        <li>Pixels bounce off walls and blocks. Trap them all in <strong id="help-goal">15%</strong> of the board to win.</li>
-        <li>Place a block on a pixel and it gets <span class="red">stuck</span>. You can't win until you free it.</li>
+        <li>Pixies bounce off walls and blocks. Pen them all into <strong id="help-goal">15%</strong> of the board to win.</li>
+        <li>Place a block on a pixie and it gets <span class="red">stuck</span>. You can't win until you free it.</li>
         <li>Score = moves × seconds, so it climbs while you play. Like golf, lower wins: be quick and use few moves.</li>
         <li>Restarting the daily resets the board, not your clock or moves.</li>
       </ul>

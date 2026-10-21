@@ -3,8 +3,8 @@
  *
  *   node scripts/logo.mjs
  *
- * - public/favicon.svg   the mark: blocks penning in a glowing cluster of
- *                        pixels, with one pixel streaking out of the gap
+ * - public/favicon.svg   the mark: blocks penning in glowing winged pixies,
+ *                        with one flying out of the gap trailing twinkles
  * - public/wordmark.svg  NAME in a blocky pixel font, used in the header
  * - public/logo.svg      mark + wordmark side by side
  *
@@ -39,13 +39,13 @@ function mark({ background = true } = {}) {
   const parts = [];
   if (background) {
     parts.push(
-      `<defs><radialGradient id="bg" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#232b47"/><stop offset="1" stop-color="${BG}"/></radialGradient>`,
+      `<defs><radialGradient id="bg" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#2b2147"/><stop offset="1" stop-color="${BG}"/></radialGradient>`,
       `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`,
       `<rect width="${g}" height="${g}" rx="3.4" fill="url(#bg)"/>`,
     );
   }
   // 4×4 ring of blocks, 3 units each, filling most of the tile. The top
-  // right block is missing: that's the doorway one pixel is escaping through.
+  // right block is missing: that's the doorway one pixie is escaping through.
   const o = 1.9;
   const s = 2.8;
   const step = 3.1;
@@ -58,25 +58,42 @@ function mark({ background = true } = {}) {
   }
 
   const glow = background ? ' filter="url(#glow)"' : "";
-  const d = 0.95;
-  // Trapped cluster in the 2×2 space inside the ring.
-  const dots = [
-    [5.6, 5.5], [7.5, 5.0], [9.3, 6.1], [6.3, 7.4], [8.4, 7.6], [5.5, 9.3], [7.3, 9.4], [9.4, 8.9], [8.1, 10.2],
+  // Pixies penned inside: four big enough to read at icon size.
+  const inside = [
+    [5.7, 6.4],
+    [8.9, 5.6],
+    [6.5, 9.4],
+    [9.4, 9.0],
   ];
-  parts.push(`<g fill="${PIXEL}"${glow}>`);
-  for (const [x, y] of dots) parts.push(`<rect x="${x}" y="${y}" width="${d}" height="${d}"/>`);
-  // Escapee: bright head above the doorway, trail fading back inside.
-  const trail = [
-    [10.3, 0.55, 1.2, 1],
-    [9.4, 1.75, 0.95, 0.6],
-    [8.6, 2.9, 0.75, 0.35],
-    [7.9, 4.0, 0.6, 0.2],
-  ];
-  for (const [x, y, size, a] of trail) {
-    parts.push(`<rect x="${x}" y="${y}" width="${size}" height="${size}" opacity="${a}"/>`);
-  }
+  parts.push(`<g${glow}>`);
+  for (const [x, y] of inside) parts.push(pixie(x, y, 1.15));
+  // The escapee flies out of the doorway trailing gold and pink twinkles.
+  parts.push(pixie(10.95, 0.95, 1.3));
+  parts.push(star(10.0, 3.25, 0.62, SPARKLE_GOLD));
+  parts.push(star(8.9, 4.35, 0.45, SPARKLE_PINK));
+  parts.push(star(8.15, 5.05, 0.3, SPARKLE_GOLD, 0.75));
   parts.push("</g>");
   return parts.join("");
+}
+
+const SPARKLE_GOLD = "#ffe27a";
+const SPARKLE_PINK = "#ff9cf0";
+const WING = "#e2fbff";
+
+/** A pixie: square body with a wing up on each side, like in the game. */
+function pixie(x, y, s) {
+  const w = s * 0.62;
+  return [
+    `<rect x="${x - w}" y="${y - w * 0.75}" width="${w}" height="${w}" fill="${WING}" opacity="0.8"/>`,
+    `<rect x="${x + s}" y="${y - w * 0.75}" width="${w}" height="${w}" fill="${WING}" opacity="0.8"/>`,
+    `<rect x="${x}" y="${y}" width="${s}" height="${s}" fill="${PIXEL}"/>`,
+  ].join("");
+}
+
+/** A four-point twinkle centred on (x, y). */
+function star(x, y, r, fill, opacity = 1) {
+  const k = r * 0.28;
+  return `<path d="M${x} ${y - r}L${x + k} ${y - k}L${x + r} ${y}L${x + k} ${y + k}L${x} ${y + r}L${x - k} ${y + k}L${x - r} ${y}L${x - k} ${y - k}Z" fill="${fill}" opacity="${opacity}"/>`;
 }
 
 // 5×7 pixel font, enough for any rename.
@@ -147,6 +164,7 @@ function wordmarkSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${w.width + 2 * pad} ${w.height + 2 * pad}" role="img" aria-label="${NAME}">
 <defs>${glowFilter("g", 0.35)}<linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4fbff"/><stop offset="1" stop-color="${PIXEL}"/></linearGradient></defs>
 ${w.shadow}<g fill="url(#fill)" filter="url(#g)">${w.face}</g>
+${star(w.width - 0.1, -0.35, 0.75, SPARKLE_GOLD)}${star(w.width - 1.6, -0.75, 0.4, SPARKLE_PINK)}
 </svg>
 `;
 }
@@ -167,7 +185,7 @@ function logoSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${MARK_GRID}" role="img" aria-label="${NAME}">
 ${mark()}
 <defs>${glowFilter("wg", 0.35)}<linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4fbff"/><stop offset="1" stop-color="${PIXEL}"/></linearGradient></defs>
-<g transform="translate(${MARK_GRID + gap} ${ty}) scale(${scale})">${w.shadow}<g fill="url(#wfill)" filter="url(#wg)">${w.face}</g></g>
+<g transform="translate(${MARK_GRID + gap} ${ty}) scale(${scale})">${w.shadow}<g fill="url(#wfill)" filter="url(#wg)">${w.face}</g>${star(w.width - 0.1, -0.35, 0.75, SPARKLE_GOLD)}${star(w.width - 1.6, -0.75, 0.4, SPARKLE_PINK)}</g>
 </svg>
 `;
 }

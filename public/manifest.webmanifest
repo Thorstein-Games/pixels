@@ -1,7 +1,7 @@
 {
   "name": "Pix Pen",
   "short_name": "Pix Pen",
-  "description": "Trap 100 bouncing pixels into 15% of the board. A new puzzle every day.",
+  "description": "Pen 100 bouncing pixies into 15% of the board. A new puzzle every day.",
   "start_url": "/pix-pen/",
   "scope": "/pix-pen/",
   "display": "standalone",
