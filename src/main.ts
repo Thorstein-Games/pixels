@@ -2,7 +2,10 @@ import "./style.css";
 import { WIN_AREA_PERCENT } from "./game/config";
 import { generateLevel, type Level } from "./game/level";
 import { advance, createGame, reachPercent, tap, winArea, type Game } from "./game/sim";
-import { createAnim, draw, type CellAnim } from "./render";
+import { createAnim, draw, type CellAnim, type Look } from "./render";
+
+/** Try-out switch for the pixie look: `?look=pixie`. */
+const look: Look = new URLSearchParams(location.search).get("look") === "pixie" ? "pixie" : "classic";
 import {
   clearProgress,
   currentStreak,
@@ -401,6 +404,8 @@ function frame(now: number) {
     state.wonAt,
     state.running ? state.aim : null,
     state.pressedAt === null ? null : now - state.pressedAt,
+    look,
+    (state.running || state.ambient) && !paused,
   );
   requestAnimationFrame(frame);
 }

@@ -14,14 +14,27 @@ const COLORS = {
   won: "#a4ffb0",
 };
 
-/** Draws squares popping in and out, keyed by cell index. */
+/** How the pixels are drawn: plain dots, or winged pixies leaving sparkles. */
+export type Look = "classic" | "pixie";
+
+interface Sparkle {
+  /** Board coordinates, in cells. */
+  x: number;
+  y: number;
+  born: number;
+  color: string;
+}
+
+/** Per-game animation state: squares popping in and out, and sparkles. */
 export interface CellAnim {
   placedAt: Map<number, number>;
   removedAt: Map<number, number>;
+  sparkles: Sparkle[];
+  lastFrame: number | null;
 }
 
 export function createAnim(): CellAnim {
-  return { placedAt: new Map(), removedAt: new Map() };
+  return { placedAt: new Map(), removedAt: new Map(), sparkles: [], lastFrame: null };
 }
 
 const POP_MS = 180;
@@ -36,6 +49,9 @@ export function draw(
   aim: number | null = null,
   /** Milliseconds the current press has been held, or null when not pressing. */
   pressAge: number | null = null,
+  look: Look = "classic",
+  /** Pixels are moving this frame (not paused, not on the start screen). */
+  moving = true,
 ) {
   const { cols, rows, cells, reachable } = game;
   const w = cols * cell;
@@ -93,6 +109,10 @@ export function draw(
   const size = Math.max(2, Math.round(cell / 9));
   const half = size / 2;
   const glow = wonAt === null ? 0 : 0.5 + 0.5 * Math.sin((now - wonAt) / 140);
+  if (look === "pixie") {
+    drawPixies(ctx, game, cell, now, anim, wonAt, size, glow, moving);
+    return;
+  }
   for (const p of game.pixels) {
     let x = p.x * cell;
     let y = p.y * cell;
@@ -111,6 +131,102 @@ export function draw(
     }
     ctx.fillRect(Math.round(x - half), Math.round(y - half), size, size);
   }
+}
+
+const SPARKLE_COLORS = ["#ffe27a", "#ff9cf0"];
+/** Average gap between sparkles from one moving pixie, and how long each lasts. */
+const SPARKLE_EVERY_MS = 150;
+const SPARKLE_LIFE_MS = 420;
+
+let haloSprite: HTMLCanvasElement | null = null;
+/** A soft round glow, drawn once and stamped under every pixie. */
+function halo(): HTMLCanvasElement {
+  if (haloSprite) return haloSprite;
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const g = c.getContext("2d")!;
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+  grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  return (haloSprite = c);
+}
+
+/**
+ * Pixies: each pixel gets a soft glow and a pair of flapping wings, and
+ * moving ones shed short-lived sparkles behind them. Sparkles are faint and
+ * brief so the board stays readable; trapped pixies stop flapping and shake.
+ */
+function drawPixies(
+  ctx: CanvasRenderingContext2D,
+  game: Game,
+  cell: number,
+  now: number,
+  anim: CellAnim,
+  wonAt: number | null,
+  size: number,
+  glow: number,
+  moving: boolean,
+) {
+  const dt = anim.lastFrame === null ? 0 : Math.min(100, now - anim.lastFrame);
+  anim.lastFrame = now;
+
+  // Shed new sparkles (only while pixies move), retire old ones.
+  if (moving && wonAt === null && dt > 0) {
+    const chance = dt / SPARKLE_EVERY_MS;
+    for (const p of game.pixels) {
+      if (p.stuckIn >= 0 || Math.random() > chance) continue;
+      anim.sparkles.push({
+        x: p.x - p.vx * 0.06 + (Math.random() - 0.5) * 0.25,
+        y: p.y - p.vy * 0.06 + (Math.random() - 0.5) * 0.25,
+        born: now,
+        color: SPARKLE_COLORS[(Math.random() * SPARKLE_COLORS.length) | 0],
+      });
+    }
+  }
+  anim.sparkles = anim.sparkles.filter((s) => now - s.born < SPARKLE_LIFE_MS);
+  for (const s of anim.sparkles) {
+    const t = (now - s.born) / SPARKLE_LIFE_MS;
+    const arm = Math.max(1, Math.round(size * (1 - t) * 0.9));
+    const x = Math.round(s.x * cell);
+    const y = Math.round(s.y * cell);
+    ctx.globalAlpha = 0.5 * (1 - t);
+    ctx.fillStyle = s.color;
+    // A tiny pixel-art twinkle: a plus sign that shrinks as it fades.
+    ctx.fillRect(x - arm, y, arm * 2 + 1, 1);
+    ctx.fillRect(x, y - arm, 1, arm * 2 + 1);
+  }
+  ctx.globalAlpha = 1;
+
+  const half = size / 2;
+  const wing = Math.max(1, Math.round(size * 0.75));
+  const sprite = halo();
+  game.pixels.forEach((p, i) => {
+    let x = p.x * cell;
+    let y = p.y * cell;
+    const stuck = p.stuckIn >= 0;
+    if (stuck) {
+      x += Math.sin(now / 23 + p.vx * 50) * 1.5;
+      y += Math.cos(now / 19 + p.vy * 50) * 1.5;
+    }
+    const body = stuck ? COLORS.stuck : wonAt === null ? COLORS.pixel : COLORS.won;
+    const r = size * (2.2 + glow);
+    ctx.globalAlpha = stuck ? 0.25 : 0.28 + 0.3 * glow;
+    ctx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
+
+    // Wings flap out of step with each other; trapped pixies hold them down.
+    const up = !stuck && Math.sin(now / 55 + i * 1.7) > 0;
+    const wy = Math.round(y - half - (up ? wing : wing * 0.35));
+    ctx.globalAlpha = stuck ? 0.35 : 0.6;
+    ctx.fillStyle = "#e9fbff";
+    ctx.fillRect(Math.round(x - half - wing), wy, wing, wing);
+    ctx.fillRect(Math.round(x + half), wy, wing, wing);
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = body;
+    ctx.fillRect(Math.round(x - half), Math.round(y - half), size, size);
+  });
 }
 
 /** A press held this long starts showing row/column guides, fading in. */
