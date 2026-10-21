@@ -65,9 +65,11 @@ tg-bar:not(:defined) {
   /* Wide enough for the board to fill a tall screen (it is 14:20, under
      about 270px of shared bar, header, stats and buttons), and never
      narrower than 520. */
-  max-width: clamp(520px, calc((100dvh - 270px) * 0.7 + 32px), 900px);
+  max-width: clamp(520px, calc((100svh - 270px) * 0.7 + 32px), 900px);
   margin: 0 auto;
-  height: calc(100dvh - 40px);
+  /* svh, not dvh: dvh changes while phones slide their address bar away on
+     scroll, which resized (and blanked) the board on every frame. */
+  height: calc(100svh - 40px);
   display: flex;
   flex-direction: column;
   gap: 10px;

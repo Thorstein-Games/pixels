@@ -363,8 +363,10 @@ function resize() {
     8,
     Math.min(72, Math.floor(Math.min((wrap.clientWidth - border) / cols, (wrap.clientHeight - border) / rows))),
   );
-  state.cell = cell;
   const dpr = window.devicePixelRatio || 1;
+  // Setting canvas.width clears it, so only do it when the size really changes.
+  if (cell === state.cell && canvas.width === Math.round(cols * cell * dpr) && canvas.height === Math.round(rows * cell * dpr)) return;
+  state.cell = cell;
   canvas.style.width = `${cols * cell}px`;
   canvas.style.height = `${rows * cell}px`;
   canvas.width = Math.round(cols * cell * dpr);
