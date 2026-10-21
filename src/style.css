@@ -83,11 +83,11 @@ tg-bar:not(:defined) {
 }
 .title {
   margin: 0;
-  font-size: 22px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pixel);
-  text-shadow: 0 0 12px rgba(143, 243, 255, 0.35);
+  line-height: 0;
+}
+.title img {
+  display: block;
+  height: 30px;
 }
 .modes {
   display: flex;
@@ -400,8 +400,8 @@ dialog li {
     padding-top: 8px;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
-  .title {
-    font-size: 18px;
+  .title img {
+    height: 24px;
   }
   .mode {
     padding: 3px 8px;
