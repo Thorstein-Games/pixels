@@ -51,6 +51,10 @@ test.describe("daily puzzle", () => {
   });
 
   test("streaks build day by day, survive reloads, and reset after a missed day", async ({ page }) => {
+    // Plays three full days (solve, win animation, reload each), which can
+    // take over 30s in CI's WebKit. The checks are unchanged; only the
+    // time limit is tripled.
+    test.slow();
     for (const [day, streak, best] of [
       ["2026-10-22", 1, 1],
       ["2026-10-23", 2, 2],
