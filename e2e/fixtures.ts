@@ -14,6 +14,12 @@ export const test = base.extend<{ consoleErrors: string[] }>({
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+      // A crashed page loses the game mid-test; say so instead of failing on
+      // a missing element later.
+      page.on("crash", () => {
+        errors.push(`page crashed (${page.url()})`);
+        console.error(`[${test.info().title}] page crashed at ${page.url()}`);
+      });
       await use(errors);
       expect(errors).toEqual([]);
     },
