@@ -32,8 +32,7 @@ test("a block on a pixel traps it until removed", async ({ page }) => {
   await expect(page.locator("#stuck-note")).toBeHidden();
 });
 
-test("daily: winning shows the result, saves it and offers a share", async ({ page, context }) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+test("daily: winning shows the result, saves it and offers a share", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Start", exact: true }).click();
   // Gather every pixel into the top-left corner, then wall it in by tapping.
