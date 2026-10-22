@@ -9,10 +9,17 @@ Plain Vite + TypeScript, canvas rendering, no framework, no server. Built with `
 ```bash
 npm run dev          # Vite dev server
 npm run verify       # typecheck + unit tests — run before committing
-npx playwright test  # e2e against a production build (desktop + phone viewports)
+npm run test:e2e     # Playwright against a production build, desktop + phone (~40s)
 npx vite-node scripts/balance.ts [seeds] ['{"roomMaxCells":14}']  # bot playtest: median time/moves to reach each area threshold
 node scripts/logo.mjs && npx vite-node scripts/render-images.ts  # regenerate logo SVGs, then app icons + share image
 ```
+
+## Tests
+
+Deploys are gated: `deploy.yml` calls `ci.yml` (verify + Playwright) and only publishes if it passes, so a red suite never ships. CI also runs on pull requests and uploads the Playwright report when it fails.
+
+- Unit (`tests/`, vitest): `determinism.test.ts` pins golden fingerprints of daily boards and 30s of pixie paths (if one fails after a tuning change, update the snapshot deliberately and note that today's board changes for players mid-way through it; otherwise find what broke determinism); `rules.test.ts` covers generation, bounces, trapping, the exact win threshold and a random-play fuzz checking no pixie ever leaves the area the win check counts; `progress.test.ts` covers localStorage (pre-rename keys, corrupt or unavailable storage), dates, streaks, scoring and share text.
+- E2E (`e2e/`, Playwright): `fixtures.ts` stubs the Thorstein Games bar and fails any test that logs a console error; import `test`/helpers from it in new specs. `critical.spec.ts` covers the daily across days (with `page.clock` and a pinned timezone), streaks, sharing, pause on help, trapped pixies blocking the win, pixies drawn on the canvas in both looks, layout at 320px to 1920px, and metadata/asset paths; `game.spec.ts` covers placing, aiming, restart, play again and score heat. The win card counts numbers up, so wait for final values (`toHaveText`) instead of reading them right away.
 
 ## Layout
 

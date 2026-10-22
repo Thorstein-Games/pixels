@@ -1,9 +1,10 @@
+# Typecheck, unit tests and the Playwright suite. Runs on pull requests, and
+# Deploy calls it before every deploy, so a red run never ships.
 name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 
 jobs:
   test:
@@ -20,3 +21,11 @@ jobs:
       - run: npx playwright test
         env:
           CI: "1"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

@@ -1,39 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
-
-test.beforeEach(async ({ page }) => {
-  // The shared Thorstein Games bar comes from production; keep tests off the
-  // network. Its 40px placeholder keeps the layout the same.
-  await page.route("https://thorsteingames.com/tg-bar.js", (r) =>
-    r.fulfill({ contentType: "text/javascript", body: "" }),
-  );
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  (page as Page & { errors?: string[] }).errors = errors;
-});
-
-test.afterEach(async ({ page }) => {
-  expect((page as Page & { errors?: string[] }).errors).toEqual([]);
-});
-
-/** Taps the centre of a board cell. */
-async function tapCell(page: Page, c: number, r: number) {
-  const cell = await page.evaluate(() => (window as any).__pixels.cell);
-  const box = (await page.locator("#board").boundingBox())!;
-  await page.mouse.click(box.x + 2 + (c + 0.5) * cell, box.y + 2 + (r + 0.5) * cell);
-}
-
-/** First empty cell no pixel is in right now. */
-async function freeCell(page: Page): Promise<[number, number]> {
-  return page.evaluate(() => {
-    const { game } = (window as any).__pixels;
-    const taken = new Set(game.pixels.map((p: any) => Math.floor(p.y) * game.cols + Math.floor(p.x)));
-    for (let i = 0; i < game.cells.length; i++) {
-      if (game.cells[i] === 0 && !taken.has(i)) return [i % game.cols, Math.floor(i / game.cols)];
-    }
-    throw new Error("no free cell");
-  });
-}
+import { expect, freeCell, tapCell, test, winNow } from "./fixtures";
 
 test("daily: place, remove, and the clock and moves survive a reload", async ({ page }) => {
   await page.goto("./");
@@ -170,18 +135,6 @@ test("the board fills a tall tablet screen", async ({ browser }) => {
   expect(box.height).toBeGreaterThan(1180 * 0.7);
   await page.close();
 });
-
-/** Seals every pixel into the top-left cell with two taps. */
-async function winNow(page: Page) {
-  await page.evaluate(() => {
-    const { game } = (window as any).__pixels;
-    game.cells.fill(0);
-    for (const p of game.pixels) Object.assign(p, { x: 0.5, y: 0.5, vx: 0, vy: 0 });
-  });
-  await tapCell(page, 1, 0);
-  await tapCell(page, 0, 1);
-  await expect(page.locator("#win-overlay")).toBeVisible();
-}
 
 test("play again after the daily replays today's board without touching the result", async ({ page }) => {
   await page.goto("./");
