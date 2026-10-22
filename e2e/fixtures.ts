@@ -28,8 +28,11 @@ export const state = (page: Page) => page.evaluate(() => (window as any).__pixel
 
 /** Taps the centre of a board cell. */
 export async function tapCell(page: Page, c: number, r: number) {
+  const board = page.locator("#board");
+  await expect(board).toBeVisible();
   const cell = await page.evaluate(() => (window as any).__pixels.cell);
-  const box = (await page.locator("#board").boundingBox())!;
+  const box = await board.boundingBox();
+  if (!box) throw new Error("board has no on-screen box");
   const border = (box.width - 14 * cell) / 2;
   await page.mouse.click(box.x + border + (c + 0.5) * cell, box.y + border + (r + 0.5) * cell);
 }
