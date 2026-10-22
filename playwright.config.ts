@@ -10,6 +10,9 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "phone", use: { ...devices["Pixel 7"] } },
+    // Safari's engine, where most iPhone-only bugs live. Runs in CI (the
+    // Playwright container has WebKit); locally it needs `npx playwright install webkit`.
+    { name: "iphone", use: { ...devices["iPhone 13"] } },
   ],
   webServer: {
     command: "npm run build && npx vite preview --port 4173 --strictPort",

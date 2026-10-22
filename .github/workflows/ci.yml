@@ -1,13 +1,16 @@
-# Typecheck, unit tests and the Playwright suite. Runs on pull requests, and
-# Deploy calls it before every deploy, so a red run never ships.
+# Typecheck + unit tests, and the Playwright suite in desktop Chrome, Android
+# Chrome and iPhone Safari, all in parallel. Runs on every push to a branch
+# other than main; Deploy calls it before every deploy of main, so a red run
+# never ships.
 name: CI
 
 on:
-  pull_request:
+  push:
+    branches-ignore: [main]
   workflow_call:
 
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +20,37 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
-      - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
+
+  e2e:
+    runs-on: ubuntu-latest
+    # Browsers and their system libraries come preinstalled, which saves the
+    # ~7 minute `playwright install --with-deps`. Keep the tag in step with
+    # @playwright/test in package.json (checked below).
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop, phone, iphone]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Playwright version matches the container
+        run: |
+          v=$(node -p "require('@playwright/test/package.json').version")
+          test "$v" = "1.56.1" || { echo "package has Playwright $v; update the container tag in ci.yml"; exit 1; }
+      - run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: "1"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: |
             playwright-report
             test-results
