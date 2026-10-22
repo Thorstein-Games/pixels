@@ -26,15 +26,32 @@ export { expect, type Page };
 /** The game's state, exposed as window.__pixels. */
 export const state = (page: Page) => page.evaluate(() => (window as any).__pixels);
 
-/** Taps the centre of a board cell. */
+/**
+ * Taps the centre of a board cell with a real mouse click. The board's
+ * position comes from the page itself (getBoundingClientRect, the same
+ * viewport coordinates the mouse uses): CI's WebKit sometimes answered
+ * Playwright's boundingBox() with null for a board that was on screen.
+ */
 export async function tapCell(page: Page, c: number, r: number) {
-  const board = page.locator("#board");
-  await expect(board).toBeVisible();
-  const cell = await page.evaluate(() => (window as any).__pixels.cell);
-  const box = await board.boundingBox();
-  if (!box) throw new Error("board has no on-screen box");
-  const border = (box.width - 14 * cell) / 2;
-  await page.mouse.click(box.x + border + (c + 0.5) * cell, box.y + border + (r + 0.5) * cell);
+  await expect(page.locator("#board")).toBeVisible();
+  const at = await page.evaluate(
+    ([c, r]) => {
+      const canvas = document.getElementById("board") as HTMLCanvasElement | null;
+      const s = (window as any).__pixels;
+      if (!canvas || !s) return { error: `board ${canvas ? "found" : "missing"}, game ${s ? "found" : "missing"}` };
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        return { error: `board is ${rect.width}×${rect.height} at ${location.href} (${document.readyState})` };
+      }
+      return {
+        x: rect.left + canvas.clientLeft + (c + 0.5) * s.cell,
+        y: rect.top + canvas.clientTop + (r + 0.5) * s.cell,
+      };
+    },
+    [c, r] as const,
+  );
+  if ("error" in at) throw new Error(`can't tap cell (${c}, ${r}): ${at.error}`);
+  await page.mouse.click(at.x, at.y);
 }
 
 /** First empty cell no pixie is in right now. */

@@ -47,6 +47,10 @@ jobs:
       - run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: "1"
+      # The page snapshot at each failure, readable straight from the log.
+      - name: Show failure context
+        if: failure()
+        run: find test-results -name error-context.md -exec sh -c 'echo "=== $1"; cat "$1"' _ {} \;
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
