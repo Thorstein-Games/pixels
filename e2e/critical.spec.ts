@@ -75,13 +75,20 @@ test.describe("daily puzzle", () => {
     await page.clock.setFixedTime(at("2026-10-22"));
     await page.goto("./");
     await start(page);
+    // 30s on the clock, so the score (moves × seconds) is well above zero
+    // and a half-finished count-up can't be mistaken for it.
+    await page.evaluate(() => ((window as any).__pixels.elapsedMs = 30_000));
     await winNow(page);
     // The win card counts its numbers up; wait for the final values.
     await expect(page.locator("#win-moves")).toHaveText("2");
     const score = ((await state(page)).result.score as number).toLocaleString("en-US");
+    expect(Number(score.replace(/,/g, ""))).toBeGreaterThanOrEqual(60);
     await expect(page.locator("#win-score")).toHaveText(score);
     await page.reload();
     await expect(page.locator("#win-overlay")).toBeVisible();
+    // Reopening a solved daily shows the results straight away, no count-up.
+    expect(await page.locator("#win-score").textContent()).toBe(score);
+    expect(await page.locator("#win-moves").textContent()).toBe("2");
     await expect(page.locator("#start-overlay")).toBeHidden();
     await expect(page.locator("#restart-btn")).toBeHidden();
     await expect(page.locator("#win-moves")).toHaveText("2");

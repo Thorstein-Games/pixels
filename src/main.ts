@@ -271,7 +271,8 @@ function showWin(result: DailyResult, animate: boolean) {
   const duration = animate ? 900 : 0;
   countUp(ui.winTime, result.timeMs, duration, 0, formatTime);
   countUp(ui.winMoves, result.moves, duration, 150, String);
-  countUp(ui.winScore, result.score, duration + 400, 300, formatNumber);
+  // No count-up when reopening a solved daily: show the numbers straight away.
+  countUp(ui.winScore, result.score, animate ? duration + 400 : 0, 300, formatNumber);
 }
 
 function dailyExtra(): string {
