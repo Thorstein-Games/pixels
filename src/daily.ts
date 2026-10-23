@@ -114,3 +114,79 @@ export function clearProgress() {
     // ignore
   }
 }
+
+/* ---- cloud saves (Thorstein Games accounts, see main.ts) ---- */
+
+/** The progress that follows a signed-in player to other devices. Today's unfinished board stays per device. */
+export const SYNC_KEYS = [STATS, RESULTS];
+
+const isResult = (r: unknown): r is DailyResult =>
+  !!r && typeof r === "object" && ["timeMs", "moves", "score"].every((k) => Number.isFinite((r as Record<string, unknown>)[k]));
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function asResults(v: unknown): Record<string, DailyResult> {
+  const out: Record<string, DailyResult> = {};
+  if (v && typeof v === "object") {
+    for (const [k, r] of Object.entries(v)) if (DATE.test(k) && isResult(r)) out[k] = r;
+  }
+  return out;
+}
+
+function asStats(v: unknown): DailyStats {
+  const s = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? Math.floor(x) : 0);
+  return {
+    played: n(s.played),
+    streak: n(s.streak),
+    bestStreak: n(s.bestStreak),
+    lastSolvedKey: typeof s.lastSolvedKey === "string" && DATE.test(s.lastSolvedKey) ? s.lastSolvedKey : null,
+  };
+}
+
+/**
+ * Combines two devices' saved progress ({ localStorage key: parsed value }).
+ * Keeps every solved day (the better score when both solved it) and works
+ * the stats out again from them, so a streak played half on a phone and
+ * half on a laptop joins up. Order doesn't matter: merge(a, b) = merge(b, a).
+ */
+export function mergeSaves(a: Record<string, unknown>, b: Record<string, unknown>): Record<string, unknown> {
+  const ra = asResults(a[RESULTS]);
+  const rb = asResults(b[RESULTS]);
+  const results: Record<string, DailyResult> = {};
+  for (const key of [...new Set([...Object.keys(ra), ...Object.keys(rb)])].sort()) {
+    const x = ra[key];
+    const y = rb[key];
+    // Lower score wins; ties go to the faster time, then fewer moves.
+    results[key] =
+      !x || !y ? x || y : [x, y].sort((p, q) => p.score - q.score || p.timeMs - q.timeMs || p.moves - q.moves)[0];
+  }
+
+  const sa = asStats(a[STATS]);
+  const sb = asStats(b[STATS]);
+  const days = Object.keys(results);
+  const last = [sa.lastSolvedKey, sb.lastSolvedKey, days[days.length - 1]].filter((k): k is string => !!k).sort().pop() ?? null;
+
+  // Runs of consecutive solved days.
+  let best = 0;
+  let run = 0;
+  let runAtLast = 0;
+  days.forEach((key, i) => {
+    run = i > 0 && addDays(days[i - 1], 1) === key ? run + 1 : 1;
+    best = Math.max(best, run);
+    if (key === last) runAtLast = run;
+  });
+  // A device's own count still counts where its results don't go back as far.
+  const own = (s: DailyStats) => (s.lastSolvedKey === last ? s.streak : 0);
+  const streak = Math.max(runAtLast, own(sa), own(sb));
+
+  const stats: DailyStats = {
+    played: Math.max(sa.played, sb.played, days.length),
+    streak,
+    bestStreak: Math.max(sa.bestStreak, sb.bestStreak, best, streak),
+    lastSolvedKey: last,
+  };
+  const out: Record<string, unknown> = {};
+  if (a[STATS] !== undefined || b[STATS] !== undefined || days.length) out[STATS] = stats;
+  if (a[RESULTS] !== undefined || b[RESULTS] !== undefined) out[RESULTS] = results;
+  return out;
+}

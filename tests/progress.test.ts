@@ -8,11 +8,13 @@ import {
   loadProgress,
   loadResult,
   loadStats,
+  mergeSaves,
   puzzleNumber,
   recordSolve,
   saveProgress,
   saveResult,
   saveStats,
+  SYNC_KEYS,
 } from "../src/daily";
 import { formatNumber, formatTime, score, scoreHeat } from "../src/score";
 import { GAME_NAME, SITE_URL, shareText } from "../src/share";
@@ -203,5 +205,61 @@ describe("share text", () => {
   it("links to the current address", () => {
     expect(SITE_URL).toBe("https://thorsteingames.com/pix-pen");
     expect(GAME_NAME).toBe("Pix Pen");
+  });
+});
+
+describe("cloud saves (merging two devices)", () => {
+  const STATS = "pixels.daily.stats";
+  const RESULTS = "pixels.daily.results";
+  const r = (score: number, timeMs = score, moves = 10) => ({ score, timeMs, moves });
+  const save = (days: Record<string, number>, stats?: Partial<typeof emptyStats>) => ({
+    [RESULTS]: Object.fromEntries(Object.entries(days).map(([k, v]) => [k, r(v)])),
+    [STATS]: { ...emptyStats, ...stats },
+  });
+
+  it("syncs the stats and results, not today's unfinished board", () => {
+    expect(SYNC_KEYS).toEqual([STATS, RESULTS]);
+  });
+
+  it("joins a streak played half on each device", () => {
+    const phone = save({ "2026-10-16": 50, "2026-10-17": 60 }, { played: 2, streak: 2, bestStreak: 2, lastSolvedKey: "2026-10-17" });
+    const laptop = save({ "2026-10-18": 70 }, { played: 1, streak: 1, bestStreak: 1, lastSolvedKey: "2026-10-18" });
+    const merged = mergeSaves(phone, laptop);
+    expect(merged[STATS]).toEqual({ played: 3, streak: 3, bestStreak: 3, lastSolvedKey: "2026-10-18" });
+    expect(Object.keys(merged[RESULTS] as object)).toEqual(["2026-10-16", "2026-10-17", "2026-10-18"]);
+  });
+
+  it("keeps the better score for a day solved on both", () => {
+    const merged = mergeSaves(save({ "2026-10-20": 900 }), save({ "2026-10-20": 400 }));
+    expect((merged[RESULTS] as Record<string, unknown>)["2026-10-20"]).toEqual(r(400));
+  });
+
+  it("gives the same answer either way round, and again when merged with itself", () => {
+    const a = save({ "2026-10-16": 5, "2026-10-18": 9, "2026-10-19": 3 }, { played: 3, streak: 2, bestStreak: 2, lastSolvedKey: "2026-10-19" });
+    const b = save({ "2026-10-17": 4, "2026-10-19": 8 }, { played: 2, streak: 1, bestStreak: 1, lastSolvedKey: "2026-10-19" });
+    const ab = mergeSaves(a, b);
+    expect(mergeSaves(b, a)).toEqual(ab);
+    expect(mergeSaves(ab, ab)).toEqual(ab);
+    expect(mergeSaves(ab, a)).toEqual(ab);
+    expect(ab[STATS]).toEqual({ played: 4, streak: 4, bestStreak: 4, lastSolvedKey: "2026-10-19" });
+  });
+
+  it("never loses a best streak or play count the results don't cover", () => {
+    const old = save({ "2026-10-20": 5 }, { played: 30, streak: 12, bestStreak: 20, lastSolvedKey: "2026-10-20" });
+    const merged = mergeSaves(old, save({}));
+    expect(merged[STATS]).toEqual({ played: 30, streak: 12, bestStreak: 20, lastSolvedKey: "2026-10-20" });
+  });
+
+  it("restarts the streak after a gap, keeping the best", () => {
+    const merged = mergeSaves(save({ "2026-10-16": 1, "2026-10-17": 1 }), save({ "2026-10-20": 1 }));
+    expect(merged[STATS]).toMatchObject({ streak: 1, bestStreak: 2, lastSolvedKey: "2026-10-20" });
+  });
+
+  it("takes a new device's empty save, and ignores damaged data", () => {
+    const a = save({ "2026-10-16": 7 }, { played: 1, streak: 1, bestStreak: 1, lastSolvedKey: "2026-10-16" });
+    expect(mergeSaves({}, a)).toEqual(mergeSaves(a, a));
+    const junk = { [RESULTS]: { "not-a-date": r(1), "2026-10-17": { score: "x" } }, [STATS]: "nope" };
+    expect(mergeSaves(a, junk)).toEqual(mergeSaves(a, a));
+    expect(mergeSaves({}, {})).toEqual({});
   });
 });

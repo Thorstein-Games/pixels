@@ -14,11 +14,13 @@ import {
   loadProgress,
   loadResult,
   loadStats,
+  mergeSaves,
   puzzleNumber,
   recordSolve,
   saveProgress,
   saveResult,
   saveStats,
+  SYNC_KEYS,
   type DailyResult,
 } from "./daily";
 import { formatNumber, formatTime, score, scoreHeat } from "./score";
@@ -255,6 +257,7 @@ function win() {
     saveResult(state.key, result);
     saveStats(recordSolve(loadStats(), state.key));
     clearProgress();
+    cloud?.save();
     ui.restartBtn.hidden = true;
   }
   updateHud();
@@ -471,6 +474,35 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) persist();
 });
 window.addEventListener("pagehide", persist);
+
+// Signed-in players' streaks and results follow them to other devices
+// (Thorstein Games accounts, run by the shared tg-bar.js; a no-op otherwise).
+type TG = {
+  sync(o: {
+    game: string;
+    keys: string[];
+    merge: typeof mergeSaves;
+    onUpdate?: () => void;
+  }): { save(): void };
+};
+let cloud: { save(): void } | null = null;
+const withTG = (fn: (tg: TG) => void) => {
+  const tg = (window as unknown as { TG?: TG }).TG;
+  if (tg) fn(tg);
+  else window.addEventListener("tg:ready", () => withTG(fn), { once: true });
+};
+withTG((tg) => {
+  cloud = tg.sync({
+    game: "pix-pen",
+    keys: SYNC_KEYS,
+    merge: mergeSaves,
+    // Another device solved today's board or extended the streak: show it,
+    // unless a board is being played.
+    onUpdate: () => {
+      if (state.mode === "daily" && !state.running) setupDaily();
+    },
+  });
+});
 
 setMode(location.hash === "#practice" ? "practice" : "daily");
 resize();
